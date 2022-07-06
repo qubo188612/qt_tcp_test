@@ -24,6 +24,13 @@ HEADERS += \
     client.h \
     server.h
 
+#modbustcp库的添加
+INCLUDEPATH += /home/qubo/modbus/libmodbus/install/include \
+#INCLUDEPATH += /home/qubo/modbus/libmodbus/src
+
+LIBS += /home/qubo/modbus/libmodbus/install/lib/libmodbus.so
+
+
 FORMS += \
     client.ui \
     server.ui
