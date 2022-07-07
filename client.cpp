@@ -30,6 +30,13 @@ Client::Client(QWidget *parent) :
         ui->sendBtn_2->hide();
     });
 
+    ui->edit_pos_X->setText("61.606");
+    ui->edit_pos_Y->setText("51.505");
+    ui->edit_pos_Z->setText("41.404");
+    ui->edit_pos_RX->setText("31.303");
+    ui->edit_pos_RY->setText("21.202");
+    ui->edit_pos_RZ->setText("11.101");
+    ui->edit_pos_SP->setText("9.999");
 
     ui->sendBtn->setEnabled(false);
     ui->sendBtn_2->setEnabled(false);
@@ -229,7 +236,7 @@ Client::Client(QWidget *parent) :
     connect(ui->getposBtn,&QPushButton::clicked,[=](){
         if(link_mod==LINK_NORMAL_ASCII)
         {
-            QString msg="GetPos: ";
+            QString msg=ASK_GETPOS_ASCII;
             //这里添加获取坐标信息
             client->write(msg.toUtf8());
         }
@@ -260,13 +267,8 @@ Client::Client(QWidget *parent) :
         }
         else if(link_mod==LINK_NORMAL_RTU)
         {
-            QByteArray send_group;
-            send_group.resize(5);
-            send_group[0]=1;
-            send_group[1]=2;
-            send_group[2]=3;
-            send_group[3]=4;
-            send_group[4]=5;
+            const char cart[] = ASK_GETPOS_RTU;
+            QByteArray send_group(QByteArray::fromRawData(cart, sizeof(cart)));
             client->write(send_group);
         }
     });
@@ -283,7 +285,9 @@ Client::Client(QWidget *parent) :
             QString msg_Posrz=ui->edit_pos_RZ->text();
             QString msg_Possp=ui->edit_pos_SP->text();
 
-            QString msg="Moveto: ("+msg_Posx+","+msg_Posy+","+msg_Posz+","+msg_Posrx+","+msg_Posry+","+msg_Posrz+") speed:"+msg_Possp;
+            QString msgtemp1=ASK_MOVETO_ASCII;
+            QString msgtemp2=ASK_MOVETOSP_ASCII;
+            QString msg=msgtemp1+" ("+msg_Posx+","+msg_Posy+","+msg_Posz+","+msg_Posrx+","+msg_Posry+","+msg_Posrz+") "+msgtemp2+msg_Possp;
             //这里添加获取坐标信息
             client->write(msg.toUtf8());
         }
@@ -338,6 +342,9 @@ Client::Client(QWidget *parent) :
             {
                 send_group[n]=tab_reg[n];
             }
+            char getmovetoId[]=ASK_MOVETO_RTU;
+            QByteArray QgetmovetoId(QByteArray::fromRawData(getmovetoId, sizeof(getmovetoId)));
+            send_group=QgetmovetoId+send_group;
             client->write(send_group);
         }
     });
@@ -378,11 +385,80 @@ void Client::ReceiveMsg(QByteArray msg)
     {
         if(link_mod==LINK_NORMAL_ASCII)
         {
-            //解码
+            QString recv_msg = msg;
+            QStringList msgList = recv_msg.split(" ");
+            if(msgList.size()<1)
+            {
+                fprintf(stderr, "msg is too short\n",NULL);
+            }
+            else
+            {
+                if(msgList[0]==ASE_GETPOS_ASCII)//坐标回复
+                {
+                    if(msgList.size()<7)
+                    {
+                        fprintf(stderr, "msg is too short\n",NULL);
+                    }
+                    else
+                    {
+                        float posX=msgList[1].toFloat();
+                        float posY=msgList[2].toFloat();
+                        float posZ=msgList[3].toFloat();
+                        float posRX=msgList[4].toFloat();
+                        float posRY=msgList[5].toFloat();
+                        float posRZ=msgList[6].toFloat();
+                        QString s_pos;
+                        s_pos="("+QString::number(posX)+","+QString::number(posY)+","+QString::number(posZ)+","
+                                +QString::number(posRX)+","+QString::number(posRY)+","+QString::number(posRZ)+")";
+                        ui->strpos->setText(s_pos);
+
+                    }
+                }
+           //   else if(msgList[0]==)   //其他回复
+           //   {
+           //
+           //   }
+            }
         }
         else if(link_mod==LINK_NORMAL_RTU)
         {
             //解码
+            char rcvId[RTU_MARK_ID_NUM];
+            strncpy(rcvId, msg.data(),RTU_MARK_ID_NUM);
+            QByteArray recv_Id(QByteArray::fromRawData(rcvId, sizeof(rcvId)));
+
+            char getposId[]=ASE_GETPOS_RTU;
+            QByteArray QgetposId(QByteArray::fromRawData(getposId, sizeof(getposId)));
+            if(recv_Id==QgetposId)//坐标回复
+            {
+                if(msg.size()<6*sizeof(float)+RTU_MARK_ID_NUM)
+                {
+                    fprintf(stderr, "msg is too short\n",NULL);
+                }
+                else
+                {
+                    uint8_t posdata[6*sizeof(float)];
+                    float *f_pos=(float*)posdata;
+                    memcpy(posdata,msg.data()+RTU_MARK_ID_NUM,6*sizeof(float));
+                    float posX=f_pos[0];
+                    float posY=f_pos[1];
+                    float posZ=f_pos[2];
+                    float posRX=f_pos[3];
+                    float posRY=f_pos[4];
+                    float posRZ=f_pos[5];
+                    QString s_pos;
+                    s_pos="("+QString::number(posX)+","+QString::number(posY)+","+QString::number(posZ)+","
+                            +QString::number(posRX)+","+QString::number(posRY)+","+QString::number(posRZ)+")";
+                    ui->strpos->setText(s_pos);
+                }
+            }
+
+         // char get？[]=;
+         // QByteArray Qget?(QByteArray::fromRawData(get？, sizeof(get？)));
+         // if(recv_Id==Qget?)//其他回复
+         // {
+
+         // }
         }
     }
 }

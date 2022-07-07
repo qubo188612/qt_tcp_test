@@ -4,13 +4,12 @@
 #include <QWidget>
 #include <QTcpSocket>
 #include <modbus/modbus.h>
+#include <global.h>
 
 #define LINK_MODBUS_TCP     0
 #define LINK_NORMAL_ASCII   1
 #define LINK_NORMAL_RTU     2
 
-#define MODBUS_ADD_POS      30
-#define MODBUS_ADD_MOVETO   50
 
 namespace Ui {
 class Client;

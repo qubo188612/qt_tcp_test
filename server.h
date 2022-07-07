@@ -7,7 +7,8 @@
 #include <modbus/modbus.h>
 #include <QThread>
 #include <unistd.h>
-
+#include <global.h>
+#include <QObject>
 
 #define LINK_MODBUS_TCP     0
 #define LINK_NORMAL_ASCII   1
@@ -42,15 +43,28 @@ public:
     uint16_t mod_registers[MODBUS_MAX_READ_REGISTERS];
 
     Ui::Server *ui;
+
+    void ReceiveMsg(QByteArray array,QByteArray *sent_array);
+
+private slots:
+    void init_show_registers_list();
+
 };
 
 class modbustcpThread : public QThread
 {
+    Q_OBJECT
+
 public:
     modbustcpThread(Server *statci_p);
 protected:
     void run();
 private:
     Server *_p;
+
+signals:
+    // 自定义信号
+    void Send_show_registers_list();
+
 };
 #endif // SERVER_H

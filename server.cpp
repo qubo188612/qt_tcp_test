@@ -10,6 +10,8 @@ Server::Server(QWidget *parent)
     ui->setupUi(this);
 
     thread1 = new modbustcpThread(this);
+    connect(thread1, SIGNAL(Send_show_registers_list()), this, SLOT(init_show_registers_list()));
+
 
     link_mod=LINK_MODBUS_TCP;
     server_state=0;
@@ -19,6 +21,20 @@ Server::Server(QWidget *parent)
     //设置默认地址和端口
     ui->ip->setText("127.0.0.1");
     ui->port->setText(QString::number(9999)); // QString::number(9999)
+
+    ui->edit_x->setText("10.101");
+    ui->edit_y->setText("20.202");
+    ui->edit_z->setText("30.303");
+    ui->edit_rx->setText("40.404");
+    ui->edit_ry->setText("50.505");
+    ui->edit_rz->setText("60.606");
+
+
+
+    ui->sendBtn->setEnabled(false);
+//  ui->poswriteBtn->setEnabled(false);
+//  ui->addwriteBtn->setEnabled(false);
+
 
     ui->radio_1->setChecked(1);
     connect(ui->radio_1,&QRadioButton::clicked,[=](){
@@ -36,6 +52,8 @@ Server::Server(QWidget *parent)
         MODBUS_MAX_READ_REGISTERS, 0);
 
     memset(mod_registers,0,sizeof(u_int16_t)*MODBUS_MAX_READ_REGISTERS);
+
+    init_show_registers_list();
 
     //创建监听套接字
     connect(ui->startserverBtn,&QPushButton::clicked,[=](){
@@ -61,12 +79,14 @@ Server::Server(QWidget *parent)
                         if(link_mod==LINK_NORMAL_ASCII)
                         {
                             QByteArray array = conn->readAll();
+                            QByteArray out_array;
                             ui->record->append(array);
-                            //解码
+                            ReceiveMsg(array,&out_array);
                         }
                         else if(link_mod==LINK_NORMAL_RTU)
                         {
                             QByteArray array = conn->readAll();
+                            QByteArray out_array;
                             QString msg;
                             for(int n=0;n<array.size();n++)
                             {
@@ -74,7 +94,7 @@ Server::Server(QWidget *parent)
                                 msg=msg+"0x"+QString::number(data,16)+" ";
                             }
                             ui->record->append(msg);
-                            //解码
+                            ReceiveMsg(array,&out_array);
                         }
                     });
 
@@ -83,6 +103,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(false);
                 ui->radio_2->setEnabled(false);
                 ui->radio_3->setEnabled(false);
+                ui->sendBtn->setEnabled(true);
             }
             else
             {
@@ -93,6 +114,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->sendBtn->setEnabled(false);
             }
         }
         else if(link_mod==LINK_MODBUS_TCP)
@@ -105,6 +127,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(false);
                 ui->radio_2->setEnabled(false);
                 ui->radio_3->setEnabled(false);
+                ui->sendBtn->setEnabled(true);
             }
             else
             {
@@ -113,6 +136,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->sendBtn->setEnabled(false);
             }
         }
     });
@@ -151,6 +175,56 @@ Server::Server(QWidget *parent)
             }
         }
     });
+
+    connect(ui->poswriteBtn,&QPushButton::clicked,[=](){
+        float PosX=ui->edit_x->text().toFloat();
+        float PosY=ui->edit_y->text().toFloat();
+        float PosZ=ui->edit_z->text().toFloat();
+        float PosRX=ui->edit_rx->text().toFloat();
+        float PosRY=ui->edit_ry->text().toFloat();
+        float PosRZ=ui->edit_rz->text().toFloat();
+        QString msg;
+        msg="("+ui->edit_x->text()+","+ui->edit_y->text()+","+ui->edit_z->text()+","+
+                ui->edit_rx->text()+","+ui->edit_ry->text()+","+ui->edit_rz->text()+")";
+        ui->record->append("Pos:" + msg); // 将数据显示到记录框
+
+        float *freg=(float *)&mod_registers[MODBUS_ADD_POS];
+        freg[0]=PosX;
+        freg[1]=PosY;
+        freg[2]=PosZ;
+        freg[3]=PosRX;
+        freg[4]=PosRY;
+        freg[5]=PosRZ;
+        init_show_registers_list();
+
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU)
+        {
+
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            float *f_tab_reg=(float *)&mb_mapping->tab_registers[MODBUS_ADD_POS];
+            f_tab_reg[0]=PosX;
+            f_tab_reg[1]=PosY;
+            f_tab_reg[2]=PosZ;
+            f_tab_reg[3]=PosRX;
+            f_tab_reg[4]=PosRY;
+            f_tab_reg[5]=PosRZ;
+        }
+    });
+
+    connect(ui->addwriteBtn,&QPushButton::clicked,[=](){
+
+        std::string stradd=ui->edit_addwrite->text().toStdString();
+        std::string strdata=ui->edit_datawrite->text().toStdString();
+        int addr=std::stoi(stradd,NULL,0);
+        uint16_t data=std::stoi(strdata,NULL,0);
+        if(addr>=0&&addr<MODBUS_MAX_READ_REGISTERS)
+        {
+            mod_registers[addr]=data;
+        }
+        init_show_registers_list();
+    });
 }
 
 Server::~Server()
@@ -167,9 +241,167 @@ Server::~Server()
     */
 }
 
+void Server::init_show_registers_list()
+{
+    ui->record_2->clear();
+    for(int n=0;n<MODBUS_MAX_READ_REGISTERS;n++)
+    {
+        QString msg=QString::number(n,16);
+        QString data=QString::number(mod_registers[n],16);
+        ui->record_2->append("ChangeRegister:[0x"+msg+"]: 0x"+data);
+    }
+}
+
+void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
+{
+    QByteArray outarray;
+
+    if(link_mod==LINK_NORMAL_ASCII)
+    {
+        /***********************/
+        //这里读数据
+        if(array==ASK_GETPOS_ASCII)//获取坐标
+        {
+            float *freg=(float *)&mod_registers[MODBUS_ADD_POS];
+            QString msg;
+            QString msgNull=" ";
+            msg=ASE_GETPOS_ASCII+msgNull+QString::number(freg[0])+" "+QString::number(freg[1])+" "+
+                        QString::number(freg[2])+" "+QString::number(freg[3])+" "+
+                        QString::number(freg[4])+" "+QString::number(freg[5]);
+            conn->write(msg.toUtf8());
+        }
+    //  else if(array==)//其他信息
+    //  {
+
+    //  }
+
+        /************************/
+        //这里写数据
+        else
+        {
+            QString rcvmsg=array;
+            int pos=rcvmsg.indexOf(":");
+            if(pos>=0)
+            {
+                QString rcvmsgId=rcvmsg.left(pos+1);
+                if(rcvmsgId==ASK_MOVETO_ASCII)//获取坐标
+                {
+                    float PosX,PosY,PosZ,PosRX,PosRY,PosRZ,PosSP;
+                    QString strpos=rcvmsg;
+                    strpos.chop(strpos.size()-strpos.lastIndexOf(")")); //chop把字符串后N个丢弃,chop是直接对对象进行操作(会改变对象)
+                    strpos=strpos.right(strpos.size()-strpos.indexOf("(")-1);
+                    QStringList posList = strpos.split(",");
+                    if(posList.size()!=6)
+                    {
+                        fprintf(stderr, "msg is too short\n",NULL);
+                    }
+                    else
+                    {
+                        PosX=posList[0].toFloat();
+                        PosY=posList[1].toFloat();
+                        PosZ=posList[2].toFloat();
+                        PosRX=posList[3].toFloat();
+                        PosRY=posList[4].toFloat();
+                        PosRZ=posList[5].toFloat();
+
+                        float *freg=(float *)&mod_registers[MODBUS_ADD_MOVETO];
+                        freg[0]=PosX;
+                        freg[1]=PosY;
+                        freg[2]=PosZ;
+                        freg[3]=PosRX;
+                        freg[4]=PosRY;
+                        freg[5]=PosRZ;
+                    }
+
+                    QString speed=rcvmsg;
+                    int epos = rcvmsg.lastIndexOf(")");//从后面开始查找
+                    speed=rcvmsg.right(rcvmsg.size()-epos-1-1);//输出右边第N个字符串"speed:xxx"
+                    int pos=speed.indexOf(":");
+                    if(pos>=0)
+                    {
+                        QString rcvmsg2Id=speed.left(pos+1);//"speed:"
+                        if(rcvmsg2Id==ASK_MOVETOSP_ASCII)
+                        {
+                            QString strspeed=speed.right(speed.size()-pos-1);
+                            PosSP=strspeed.toFloat(); 
+                            float *freg=(float *)&mod_registers[MODBUS_ADD_MOVETO];
+                            freg[6]=PosSP;
+                        }
+                    //  else if(array==)//其他速度信息
+                    //  {
+
+                    //  }
+                    }
+                    init_show_registers_list();
+                }
+            //  else if(rcvmsgId==)//其他信息
+            //  {
+
+            //  }
+            }
+        }
+    }
+    else if(link_mod==LINK_NORMAL_RTU)
+    {
+        /********************/
+        //这里读数据
+        const char cart[] = ASK_GETPOS_RTU;
+        QByteArray recv_group(QByteArray::fromRawData(cart, sizeof(cart)));
+        if(array==recv_group)//获取坐标
+        {
+            uint8_t *u8reg=(uint8_t *)&mod_registers[MODBUS_ADD_POS];
+            const char cartsent[] = ASE_GETPOS_RTU;
+            QByteArray sent_group(QByteArray::fromRawData(cartsent, sizeof(cartsent)));
+            QByteArray sent_group2(QByteArray::fromRawData((char*)u8reg, 6*sizeof(float)));
+            sent_group=sent_group+sent_group2;
+            conn->write(sent_group);
+        } 
+    //  else if(array==)
+    //  {
+
+    //  }
+        else
+        {
+            /********************/
+            //这里写数据
+            char rcvId[RTU_MARK_ID_NUM];
+            strncpy(rcvId, array.data(),RTU_MARK_ID_NUM);
+            QByteArray recv_Id(QByteArray::fromRawData(rcvId, sizeof(rcvId)));
+
+            const char move[] = ASK_MOVETO_RTU;
+            QByteArray recv_move(QByteArray::fromRawData(move, sizeof(move)));
+            if(recv_Id==recv_move)//电机移动
+            {
+                if(array.size()<RTU_MARK_ID_NUM+7*sizeof(float))
+                {
+                    fprintf(stderr, "msg is too short\n",NULL);
+                }
+                else
+                {
+                    uint8_t *u8reg=(uint8_t *)&mod_registers[MODBUS_ADD_MOVETO];
+                    memcpy(u8reg,array.data()+RTU_MARK_ID_NUM,7*sizeof(float));
+                    init_show_registers_list();
+                    const char moved[] = ASE_MOVETO_RTU;
+                    QByteArray sent_group(QByteArray::fromRawData(moved, sizeof(moved)));
+                    conn->write(sent_group);
+                    float *f_reg=(float*)u8reg;
+                    QString my_msg;
+                    my_msg="(移动指令:坐标["+QString::number(f_reg[0])+","+QString::number(f_reg[1])+","+
+                            QString::number(f_reg[2])+","+QString::number(f_reg[3])+","+
+                            QString::number(f_reg[4])+","+QString::number(f_reg[5])+"] 速度:"+
+                            QString::number(f_reg[6])+")";
+                    ui->record->append(my_msg);
+                }
+            }
+        }
+    }
+
+    *sent_array=outarray;
+}
+
 modbustcpThread::modbustcpThread(Server *statci_p)
 {
-    _p=statci_p;
+    _p=statci_p;    
 }
 
 void modbustcpThread::run()
@@ -198,6 +430,8 @@ void modbustcpThread::run()
                     _p->ui->record->append("ChangeRegister:[0x"+msg+"]: "+data);
                 }
               }
+            // _p->init_show_registers_list();
+              emit Send_show_registers_list();
             }
             else if (rc == -1) {
               /* Connection closed by the client or error */
@@ -211,3 +445,6 @@ void modbustcpThread::run()
         modbus_free(_p->ctx);
     }
 }
+
+
+

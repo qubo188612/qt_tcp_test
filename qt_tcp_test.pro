@@ -22,6 +22,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     client.h \
+    global.h \
     server.h
 
 #modbustcp库的添加
