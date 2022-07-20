@@ -5,10 +5,15 @@
 #include <QTcpSocket>
 #include <modbus/modbus.h>
 #include <global.h>
+#include <QJsonParseError>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #define LINK_MODBUS_TCP     0
 #define LINK_NORMAL_ASCII   1
 #define LINK_NORMAL_RTU     2
+#define LINK_KAWASAKI       3
 
 
 namespace Ui {
@@ -34,6 +39,11 @@ private:
     uint8_t link_mod;
 
     void ReceiveMsg(QByteArray msg);
+
+
+    QString JsonToQstring(QJsonObject jsonObject);
+
+    QJsonObject QstringToJson(QString jsonString);
 };
 
 #endif // CLIENT_H

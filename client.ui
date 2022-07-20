@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>750</width>
-    <height>503</height>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
      <x>9</x>
      <y>130</y>
      <width>390</width>
-     <height>151</height>
+     <height>271</height>
     </rect>
    </property>
    <widget class="QLabel" name="label_3">
@@ -81,10 +81,10 @@
    <widget class="QTextBrowser" name="record">
     <property name="geometry">
      <rect>
-      <x>9</x>
+      <x>10</x>
       <y>38</y>
       <width>372</width>
-      <height>104</height>
+      <height>241</height>
      </rect>
     </property>
    </widget>
@@ -92,17 +92,17 @@
   <widget class="QWidget" name="widget_3" native="true">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>287</y>
+     <x>10</x>
+     <y>405</y>
      <width>390</width>
-     <height>152</height>
+     <height>71</height>
     </rect>
    </property>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>9</x>
-      <y>9</y>
+      <x>10</x>
+      <y>0</y>
       <width>49</width>
       <height>23</height>
      </rect>
@@ -114,10 +114,10 @@
    <widget class="QTextEdit" name="msgEdit">
     <property name="geometry">
      <rect>
-      <x>9</x>
-      <y>38</y>
+      <x>10</x>
+      <y>30</y>
       <width>373</width>
-      <height>105</height>
+      <height>61</height>
      </rect>
     </property>
    </widget>
@@ -126,7 +126,7 @@
    <property name="geometry">
     <rect>
      <x>9</x>
-     <y>445</y>
+     <y>490</y>
      <width>491</width>
      <height>49</height>
     </rect>
@@ -396,7 +396,7 @@
    <property name="geometry">
     <rect>
      <x>430</x>
-     <y>50</y>
+     <y>30</y>
      <width>112</width>
      <height>23</height>
     </rect>
@@ -409,7 +409,7 @@
    <property name="geometry">
     <rect>
      <x>430</x>
-     <y>80</y>
+     <y>50</y>
      <width>112</width>
      <height>23</height>
     </rect>
@@ -422,13 +422,114 @@
    <property name="geometry">
     <rect>
      <x>430</x>
-     <y>110</y>
+     <y>70</y>
      <width>112</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string>normal_rtu</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radio_4">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>90</y>
+     <width>131</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>kawasaki_json</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="laseropenBtn">
+   <property name="geometry">
+    <rect>
+     <x>550</x>
+     <y>10</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string> 激光开</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="lasercloseBtn">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>10</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string> 激光关</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cameraopenBtn">
+   <property name="geometry">
+    <rect>
+     <x>550</x>
+     <y>40</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>相机开</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cameracloseBtn">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>40</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>相机关</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_tasknum">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>90</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>570</x>
+     <y>90</y>
+     <width>51</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>任务号:</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="tasknumwriteBtn">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>130</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>写入任务号</string>
    </property>
   </widget>
  </widget>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1054</width>
-    <height>488</height>
+    <height>526</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,10 +59,10 @@
   <widget class="QWidget" name="widget_2" native="true">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>130</y>
+     <x>0</x>
+     <y>150</y>
      <width>382</width>
-     <height>144</height>
+     <height>261</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -81,10 +81,10 @@
   <widget class="QWidget" name="widget_3" native="true">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>280</y>
+     <x>0</x>
+     <y>400</y>
      <width>382</width>
-     <height>144</height>
+     <height>81</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -103,8 +103,8 @@
   <widget class="QWidget" name="widget_4" native="true">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>430</y>
+     <x>10</x>
+     <y>470</y>
      <width>344</width>
      <height>49</height>
     </rect>
@@ -142,7 +142,7 @@
    <property name="geometry">
     <rect>
      <x>280</x>
-     <y>90</y>
+     <y>120</y>
      <width>89</width>
      <height>25</height>
     </rect>
@@ -421,6 +421,19 @@
    </property>
    <property name="text">
     <string>写入</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radio_4">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>80</y>
+     <width>121</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>kawasaki_json</string>
    </property>
   </widget>
  </widget>

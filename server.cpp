@@ -20,7 +20,7 @@ Server::Server(QWidget *parent)
 
     //设置默认地址和端口
     ui->ip->setText("127.0.0.1");
-    ui->port->setText(QString::number(9999)); // QString::number(9999)
+    ui->port->setText(QString::number(1502)); // QString::number(9999)
 
     ui->edit_x->setText("10.101");
     ui->edit_y->setText("20.202");
@@ -46,6 +46,9 @@ Server::Server(QWidget *parent)
     connect(ui->radio_3,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_RTU;
     });
+    connect(ui->radio_4,&QRadioButton::clicked,[=](){
+        link_mod=LINK_KAWASAKI;
+    });
 
     mb_mapping = modbus_mapping_new(
         0, 0,
@@ -57,7 +60,7 @@ Server::Server(QWidget *parent)
 
     //创建监听套接字
     connect(ui->startserverBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
         {
             if(server_state==0)
             {
@@ -76,18 +79,19 @@ Server::Server(QWidget *parent)
                     // 保证conn对象有效,所以放到新连接这里
                     // 接收数据
                     connect(conn,&QTcpSocket::readyRead,[=](){
-                        if(link_mod==LINK_NORMAL_ASCII)
+                        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
                         {
+                            QByteArray artemp="接收:";
                             QByteArray array = conn->readAll();
                             QByteArray out_array;
-                            ui->record->append(array);
+                            ui->record->append(artemp+array);
                             ReceiveMsg(array,&out_array);
                         }
                         else if(link_mod==LINK_NORMAL_RTU)
                         {
                             QByteArray array = conn->readAll();
                             QByteArray out_array;
-                            QString msg;
+                            QString msg="接收:";
                             for(int n=0;n<array.size();n++)
                             {
                                 uint8_t data=array[n];
@@ -103,6 +107,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(false);
                 ui->radio_2->setEnabled(false);
                 ui->radio_3->setEnabled(false);
+                ui->radio_4->setEnabled(false);
                 ui->sendBtn->setEnabled(true);
             }
             else
@@ -114,6 +119,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->radio_4->setEnabled(true);
                 ui->sendBtn->setEnabled(false);
             }
         }
@@ -127,6 +133,7 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(false);
                 ui->radio_2->setEnabled(false);
                 ui->radio_3->setEnabled(false);
+                ui->radio_4->setEnabled(false);
                 ui->sendBtn->setEnabled(true);
             }
             else
@@ -136,19 +143,20 @@ Server::Server(QWidget *parent)
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->radio_4->setEnabled(true);
                 ui->sendBtn->setEnabled(false);
             }
         }
     });
 
     connect(ui->sendBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
         {
             QString msg = ui->msgEdit->toPlainText();
 
             conn->write(msg.toUtf8()); // 发送数据
 
-            ui->record->append("my say:" + msg); // 将数据显示到记录框
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
         //  ui->msgEdit->clear(); //清空输入框
         }
         else if(link_mod==LINK_NORMAL_RTU)
@@ -171,7 +179,7 @@ Server::Server(QWidget *parent)
                     showmsg=showmsg+"0x"+QString::number(send_data,16)+" ";
                 }
                 conn->write(send_group);
-                ui->record->append("my say:" + showmsg); // 将数据显示到记录框
+                ui->record->append("发送:" + showmsg); // 将数据显示到记录框
             }
         }
     });
@@ -197,7 +205,7 @@ Server::Server(QWidget *parent)
         freg[5]=PosRZ;
         init_show_registers_list();
 
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
         {
 
         }
@@ -397,6 +405,118 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
             }
         }
     }
+    else if(link_mod==LINK_KAWASAKI)
+    {
+        /***********************/
+        //这里写数据
+        QJsonObject json=QstringToJson(array);
+        QJsonObject::Iterator it;
+
+        QJsonObject anser;
+        for(it=json.begin();it!=json.end();it++)//遍历Key
+        {
+            QString keyString=it.key();
+            if(keyString==ASK_LASER_KEY_KAWASAKI)//激光
+            {
+                QString valueString=it.value().toString();
+                if(valueString==ASK_LASER_OPEN_KAWASAKI)//请求开激光
+                {
+                    mod_registers[MODBUS_ADD_LASER]=1;
+                    anser.insert(ASE_LASER_KEY_KAWASAKI, ASE_LASER_OPENOK_KAWASAKI);
+                    init_show_registers_list();
+                    ui->record->append("解析:请求开激光"); // 将数据显示到记录框
+                }
+                else if(valueString==ASK_LASER_CLOSE_KAWASAKI)//请求关激光
+                {
+                    mod_registers[MODBUS_ADD_LASER]=0;
+                    anser.insert(ASE_LASER_KEY_KAWASAKI, ASE_LASER_CLOSEOK_KAWASAKI);
+                    init_show_registers_list();
+                    ui->record->append("解析:请求关激光");
+                }
+            }
+            else if(keyString==ASK_CAMERA_KEY_KAWASAKI)//相机
+            {
+                QString valueString=it.value().toString();
+                if(valueString==ASK_CAMERA_OPEN_KAWASAKI)//请求开相机
+                {
+                    mod_registers[MODBUS_ADD_LASER]=1;
+                    anser.insert(ASE_CAMERA_KEY_KAWASAKI, ASE_CAMERA_OPENOK_KAWASAKI);
+                    init_show_registers_list();
+                    ui->record->append("解析:请求开相机"); // 将数据显示到记录框
+                }
+                else if(valueString==ASK_CAMERA_CLOSE_KAWASAKI)//请求关相机
+                {
+                    mod_registers[MODBUS_ADD_LASER]=0;
+                    anser.insert(ASE_CAMERA_KEY_KAWASAKI, ASE_CAMERA_CLOSEOK_KAWASAKI);
+                    init_show_registers_list();
+                    ui->record->append("解析:请求关相机");
+                }
+            }
+            else if(keyString==ASK_TASKNUM_KEY_KAWASAKI)//任务号
+            {
+                QString valueString=it.value().toString();
+                int ID=valueString.toInt();
+                mod_registers[MODBUS_ADD_TASKNUM]=ID;
+                anser.insert(ASE_TASKNUM_KEY_KAWASAKI, valueString+ASE_TASKNUM_SETOK_KAWASAKI);
+                init_show_registers_list();
+                ui->record->append("解析:设置任务号:"+valueString);
+            }
+            else if(keyString==ASK_POS2_KEY_KAWASAKI)//获取2维坐标
+            {
+                switch(it->type())
+                {
+                    case QJsonValue::String:
+                    {
+                        QString valueString=it.value().toString();
+                        if(valueString==ASK_POS2_ONCE_KAWASAKI)//获取1次
+                        {
+                            float *freg=(float *)&mod_registers[MODBUS_ADD_POS];
+                            QJsonArray versionArray;
+                            for(int i=0;i<2;i++)
+                            {
+                                versionArray.append(freg[i]);
+                            }
+                            anser.insert(ASE_POS2_KEY_KAWASAKI, QJsonValue(versionArray));
+                            ui->record->append("解析:请求获取1次2维坐标");
+                        }
+                    }
+                    break;
+                    default:
+                    break;
+                 }
+            }
+            else if(keyString==ASK_POS6_KEY_KAWASAKI)//获取6维坐标
+            {
+                switch(it->type())
+                {
+                    case QJsonValue::String:
+                    {
+                        QString valueString=it.value().toString();
+                        if(valueString==ASK_POS6_ONCE_KAWASAKI)//获取1次
+                        {
+                            float *freg=(float *)&mod_registers[MODBUS_ADD_POS];
+                            QJsonArray versionArray;
+                            for(int i=0;i<6;i++)
+                            {
+                                versionArray.append(freg[i]);
+                            }
+                            anser.insert(ASE_POS6_KEY_KAWASAKI, QJsonValue(versionArray));
+                            ui->record->append("解析:请求获取1次6维坐标");
+                        }
+                    }
+                    break;
+                    default:
+                    break;
+                 }
+            }
+        }
+        if(anser.size()!=0)
+        {
+            QString msg=JsonToQstring(anser);
+            conn->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    }
 
     *sent_array=outarray;
 }
@@ -447,6 +567,23 @@ void modbustcpThread::run()
         modbus_free(_p->ctx);
     }
 }
+
+QJsonObject Server::QstringToJson(QString jsonString)
+{
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(jsonString.toLocal8Bit().data());
+    if(jsonDocument.isNull())
+    {
+        qDebug()<< "String NULL"<< jsonString.toLocal8Bit().data();
+    }
+    QJsonObject jsonObject = jsonDocument.object();
+    return jsonObject;
+}
+
+QString Server::JsonToQstring(QJsonObject jsonObject)
+{
+    return QString(QJsonDocument(jsonObject).toJson());
+}
+
 
 
 

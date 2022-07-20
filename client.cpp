@@ -9,7 +9,7 @@ Client::Client(QWidget *parent) :
 
     //设置默认地址和端口
     ui->ip->setText("127.0.0.1");
-    ui->port->setText(QString::number(9999)); // QString::number(9999)
+    ui->port->setText(QString::number(1502)); // QString::number(9999)
 
     client = new QTcpSocket(this);
 
@@ -17,17 +17,58 @@ Client::Client(QWidget *parent) :
     link_mod=LINK_MODBUS_TCP;
 
     ui->radio_1->setChecked(1);
+
+    ui->laseropenBtn->hide();
+    ui->lasercloseBtn->hide();
+    ui->cameraopenBtn->hide();
+    ui->cameracloseBtn->hide();
+    ui->label_6->hide();
+    ui->edit_tasknum->hide();
+    ui->tasknumwriteBtn->hide();
+
     connect(ui->radio_1,&QRadioButton::clicked,[=](){
         link_mod=LINK_MODBUS_TCP;
         ui->sendBtn_2->show();
+        ui->laseropenBtn->hide();
+        ui->lasercloseBtn->hide();
+        ui->cameraopenBtn->hide();
+        ui->cameracloseBtn->hide();
+        ui->label_6->hide();
+        ui->edit_tasknum->hide();
+        ui->tasknumwriteBtn->hide();
     });
     connect(ui->radio_2,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_ASCII;
         ui->sendBtn_2->hide();
+        ui->laseropenBtn->hide();
+        ui->lasercloseBtn->hide();
+        ui->cameraopenBtn->hide();
+        ui->cameracloseBtn->hide();
+        ui->label_6->hide();
+        ui->edit_tasknum->hide();
+        ui->tasknumwriteBtn->hide();
     });
     connect(ui->radio_3,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_RTU;
         ui->sendBtn_2->hide();
+        ui->laseropenBtn->hide();
+        ui->lasercloseBtn->hide();
+        ui->cameraopenBtn->hide();
+        ui->cameracloseBtn->hide();
+        ui->label_6->hide();
+        ui->edit_tasknum->hide();
+        ui->tasknumwriteBtn->hide();
+    });
+    connect(ui->radio_4,&QRadioButton::clicked,[=](){
+        link_mod=LINK_KAWASAKI;
+        ui->sendBtn_2->hide();
+        ui->laseropenBtn->show();
+        ui->lasercloseBtn->show();
+        ui->cameraopenBtn->show();
+        ui->cameracloseBtn->show();
+        ui->label_6->show();
+        ui->edit_tasknum->show();
+        ui->tasknumwriteBtn->show();
     });
 
     ui->edit_pos_X->setText("61.606");
@@ -45,7 +86,7 @@ Client::Client(QWidget *parent) :
 
     //连接服务器
     connect(ui->linkBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
         {
             if(link_state==0)
             {
@@ -55,6 +96,7 @@ Client::Client(QWidget *parent) :
                 ui->radio_1->setEnabled(false);
                 ui->radio_2->setEnabled(false);
                 ui->radio_3->setEnabled(false);
+                ui->radio_4->setEnabled(false);
                 ui->sendBtn->setEnabled(true);
                 ui->sendBtn_2->setEnabled(true);
                 ui->getposBtn->setEnabled(true);
@@ -68,6 +110,7 @@ Client::Client(QWidget *parent) :
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->radio_4->setEnabled(true);
                 ui->sendBtn->setEnabled(false);
                 ui->sendBtn_2->setEnabled(false);
                 ui->getposBtn->setEnabled(false);
@@ -93,6 +136,7 @@ Client::Client(QWidget *parent) :
                     ui->radio_1->setEnabled(false);
                     ui->radio_2->setEnabled(false);
                     ui->radio_3->setEnabled(false);
+                    ui->radio_4->setEnabled(false);
                     ui->sendBtn->setEnabled(true);
                     ui->sendBtn_2->setEnabled(true);
                     ui->getposBtn->setEnabled(true);
@@ -108,6 +152,7 @@ Client::Client(QWidget *parent) :
                 ui->radio_1->setEnabled(true);
                 ui->radio_2->setEnabled(true);
                 ui->radio_3->setEnabled(true);
+                ui->radio_4->setEnabled(true);
                 ui->sendBtn->setEnabled(false);
                 ui->sendBtn_2->setEnabled(false);
                 ui->getposBtn->setEnabled(false);
@@ -118,11 +163,11 @@ Client::Client(QWidget *parent) :
 
     //发送编辑框数据
     connect(ui->sendBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
         {
             QString msg = ui->msgEdit->toPlainText();
             client->write(msg.toUtf8());
-            ui->record->append("my say:"+ msg);
+            ui->record->append("发送:"+ msg);
         }
         else if(link_mod==LINK_MODBUS_TCP)
         {
@@ -178,7 +223,7 @@ Client::Client(QWidget *parent) :
                     showmsg=showmsg+"0x"+QString::number(send_data,16)+" ";
                 }
                 client->write(send_group);
-                ui->record->append("my say:" + showmsg); // 将数据显示到记录框
+                ui->record->append("发送:" + showmsg); // 将数据显示到记录框
             }
         }
      // ui->msgEdit->clear();
@@ -271,6 +316,15 @@ Client::Client(QWidget *parent) :
             QByteArray send_group(QByteArray::fromRawData(cart, sizeof(cart)));
             client->write(send_group);
         }
+        else if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+         // json.insert(ASK_POS2_KEY_KAWASAKI, ASK_POS2_ONCE_KAWASAKI);
+            json.insert(ASK_POS6_KEY_KAWASAKI, ASK_POS6_ONCE_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
     });
 
     //发送移动指令
@@ -347,20 +401,87 @@ Client::Client(QWidget *parent) :
             send_group=QgetmovetoId+send_group;
             client->write(send_group);
         }
+        else if(link_mod==LINK_KAWASAKI)
+        {
+
+        }
     });
+
+    //开激光指令
+    connect(ui->laseropenBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+            json.insert(ASK_LASER_KEY_KAWASAKI, ASK_LASER_OPEN_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
+
+    //关激光指令
+    connect(ui->lasercloseBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+            json.insert(ASK_LASER_KEY_KAWASAKI, ASK_LASER_CLOSE_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
+
+    //开相机指令
+    connect(ui->cameraopenBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+            json.insert(ASK_CAMERA_KEY_KAWASAKI, ASK_CAMERA_OPEN_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
+
+    //关相机指令
+    connect(ui->cameracloseBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+            json.insert(ASK_CAMERA_KEY_KAWASAKI, ASK_CAMERA_CLOSE_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
+
+    //写入任务号
+    connect(ui->tasknumwriteBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QString ID=ui->edit_tasknum->text();
+            QJsonObject json;
+            json.insert(ASK_TASKNUM_KEY_KAWASAKI, ID);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
+
 
     //客户端接收数据
     connect(client,&QTcpSocket::readyRead,[=](){
-        if(link_mod==LINK_NORMAL_ASCII)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
         {
+            QByteArray artemp = "接收:";
             QByteArray array = client->readAll();
-            ui->record->append(array);
+            ui->record->append(artemp+array);
             ReceiveMsg(array);
         }
         else if(link_mod==LINK_NORMAL_RTU)
         {
             QByteArray array = client->readAll();
-            QString msg;
+            QString msg="接收:";
             for(int n=0;n<array.size();n++)
             {
                 uint8_t data=array[n];
@@ -451,7 +572,7 @@ void Client::ReceiveMsg(QByteArray msg)
                             +QString::number(posRX)+","+QString::number(posRY)+","+QString::number(posRZ)+")";
                     ui->strpos->setText(s_pos);
                 }
-            }
+            }                  
 
          // char get？[]=;
          // QByteArray Qget?(QByteArray::fromRawData(get？, sizeof(get？)));
@@ -460,5 +581,160 @@ void Client::ReceiveMsg(QByteArray msg)
 
          // }
         }
+        else if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json=QstringToJson(msg);
+            QJsonObject::Iterator it;
+            for(it=json.begin();it!=json.end();it++)//遍历Key
+            {
+                QString keyString=it.key();
+                if(keyString==ASE_LASER_KEY_KAWASAKI)//激光
+                {
+                    QString valueString=it.value().toString();
+                    if(valueString==ASE_LASER_OPENOK_KAWASAKI)//激光打开成功
+                    {
+                        ui->record->append("解析:激光打开成功");
+                    }
+                    else if(valueString==ASE_LASER_OPENOK_KAWASAKI)//激光打开失败
+                    {
+                        ui->record->append("解析:激光打开失败");
+                    }
+                    else if(valueString==ASE_LASER_CLOSEOK_KAWASAKI)//激光关闭成功
+                    {
+                        ui->record->append("解析:激光关闭成功");
+                    }
+                    else if(valueString==ASE_LASER_CLOSEOK_KAWASAKI)//激光关闭失败
+                    {
+                        ui->record->append("解析:激光打开失败");
+                    }
+                }
+                else if(keyString==ASE_CAMERA_KEY_KAWASAKI)//相机
+                {
+                    QString valueString=it.value().toString();
+                    if(valueString==ASE_CAMERA_OPENOK_KAWASAKI)//相机打开成功
+                    {
+                        ui->record->append("解析:相机打开成功");
+                    }
+                    else if(valueString==ASE_CAMERA_OPENOK_KAWASAKI)//相机打开失败
+                    {
+                        ui->record->append("解析:相机打开失败");
+                    }
+                    else if(valueString==ASE_CAMERA_CLOSEOK_KAWASAKI)//相机关闭成功
+                    {
+                        ui->record->append("解析:相机关闭成功");
+                    }
+                    else if(valueString==ASE_CAMERA_CLOSEOK_KAWASAKI)//相机关闭失败
+                    {
+                        ui->record->append("解析:相机打开失败");
+                    }
+                }
+                else if(keyString==ASE_TASKNUM_KEY_KAWASAKI)//设置任务号
+                {
+                    QString valueString=it.value().toString();
+                    QStringList msgList = valueString.split(" ");
+                    if(msgList.size()==2)
+                    {
+                         QString msg=" ";
+                         msg=msg+msgList[1];
+                         if(msg==ASE_TASKNUM_SETOK_KAWASAKI)
+                         {
+                             ui->record->append("解析:设置任务号"+msgList[0]+"成功");
+                         }
+                         else if(msg==ASE_TASKNUM_SETNG_KAWASAKI)
+                         {
+                             ui->record->append("解析:设置任务号"+msgList[0]+"失败");
+                         }
+                    }
+                }
+                else if(keyString==ASE_POS2_KEY_KAWASAKI)//获取二维坐标
+                {
+                    switch(it->type())
+                    {
+                        case QJsonValue::String:
+                        {
+                            QString valueString=it.value().toString();
+                            if(valueString==ASE_POS2_FAILED_KAWASAKI)//获取1次失败
+                            {
+                                ui->record->append("获取二维坐标失败");
+                            }
+                        }
+                        break;
+                        case QJsonValue::Array:
+                        {
+                            QJsonArray versionArray=it.value().toArray();
+                            QString msg="解析:坐标pos2(";
+                            for(int i=0;i<versionArray.size();i++)
+                            {
+                                msg=msg+QString::number(versionArray[i].toDouble());
+                                if(i<versionArray.size()-1)
+                                {
+                                    msg=msg+",";
+                                }
+                                else
+                                {
+                                    msg=msg+")";
+                                }
+                            }
+                            ui->record->append(msg);
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                }
+                else if(keyString==ASE_POS6_KEY_KAWASAKI)//获取六维坐标
+                {
+                    switch(it->type())
+                    {
+                        case QJsonValue::String:
+                        {
+                            QString valueString=it.value().toString();
+                            if(valueString==ASE_POS6_FAILED_KAWASAKI)//获取1次失败
+                            {
+                                ui->record->append("获取六维坐标失败");
+                            }
+                        }
+                        break;
+                        case QJsonValue::Array:
+                        {
+                            QJsonArray versionArray=it.value().toArray();
+                            QString msg="解析:坐标pos6(";
+                            for(int i=0;i<versionArray.size();i++)
+                            {
+                                msg=msg+QString::number(versionArray[i].toDouble());
+                                if(i<versionArray.size()-1)
+                                {
+                                    msg=msg+",";
+                                }
+                                else
+                                {
+                                    msg=msg+")";
+                                }
+                            }
+                            ui->record->append(msg);
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                }
+            }
+        }
     }
+}
+
+QJsonObject Client::QstringToJson(QString jsonString)
+{
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(jsonString.toLocal8Bit().data());
+    if(jsonDocument.isNull())
+    {
+        qDebug()<< "String NULL"<< jsonString.toLocal8Bit().data();
+    }
+    QJsonObject jsonObject = jsonDocument.object();
+    return jsonObject;
+}
+
+QString Client::JsonToQstring(QJsonObject jsonObject)
+{
+    return QString(QJsonDocument(jsonObject).toJson());
 }
