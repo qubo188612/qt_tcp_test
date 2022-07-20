@@ -1,6 +1,8 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#define MODBUS_REGISTERS_MAXNUM      400//125    //寄存器最大值//MODBUS_MAX_READ_REGISTERS每次连续读取最大值
+
 #define MODBUS_ADD_POS      30
 #define MODBUS_ADD_MOVETO   50
 

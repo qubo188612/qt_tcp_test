@@ -40,7 +40,7 @@ public:
     modbus_t * ctx;
     int sock;
 
-    uint16_t mod_registers[MODBUS_MAX_READ_REGISTERS];
+    uint16_t mod_registers[MODBUS_REGISTERS_MAXNUM];
 
     Ui::Server *ui;
 

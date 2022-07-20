@@ -48,10 +48,10 @@ Server::Server(QWidget *parent)
     });
 
     mb_mapping = modbus_mapping_new(
-        MODBUS_MAX_READ_BITS, 0,
-        MODBUS_MAX_READ_REGISTERS, 0);
+        0, 0,
+        MODBUS_REGISTERS_MAXNUM, 0);
 
-    memset(mod_registers,0,sizeof(u_int16_t)*MODBUS_MAX_READ_REGISTERS);
+    memset(mod_registers,0,sizeof(u_int16_t)*MODBUS_REGISTERS_MAXNUM);
 
     init_show_registers_list();
 
@@ -219,10 +219,11 @@ Server::Server(QWidget *parent)
         std::string strdata=ui->edit_datawrite->text().toStdString();
         int addr=std::stoi(stradd,NULL,0);
         uint16_t data=std::stoi(strdata,NULL,0);
-        if(addr>=0&&addr<MODBUS_MAX_READ_REGISTERS)
+        if(addr>=0&&addr<MODBUS_REGISTERS_MAXNUM)
         {
             mod_registers[addr]=data;
         }
+        mb_mapping->tab_registers[addr]=data;
         init_show_registers_list();
     });
 }
@@ -244,7 +245,7 @@ Server::~Server()
 void Server::init_show_registers_list()
 {
     ui->record_2->clear();
-    for(int n=0;n<MODBUS_MAX_READ_REGISTERS;n++)
+    for(int n=0;n<MODBUS_REGISTERS_MAXNUM;n++)
     {
         QString msg=QString::number(n,16);
         QString data=QString::number(mod_registers[n],16);
@@ -268,6 +269,7 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
             msg=ASE_GETPOS_ASCII+msgNull+QString::number(freg[0])+" "+QString::number(freg[1])+" "+
                         QString::number(freg[2])+" "+QString::number(freg[3])+" "+
                         QString::number(freg[4])+" "+QString::number(freg[5]);
+
             conn->write(msg.toUtf8());
         }
     //  else if(array==)//其他信息
@@ -420,7 +422,7 @@ void modbustcpThread::run()
             rc = modbus_receive(_p->ctx, query);
             if (rc > 0) {
               modbus_reply(_p->ctx, query, rc, _p->mb_mapping);
-              for(int n=0;n<MODBUS_MAX_READ_REGISTERS;n++)
+              for(int n=0;n<MODBUS_REGISTERS_MAXNUM;n++)
               {
                 if(_p->mb_mapping->tab_registers[n]!=_p->mod_registers[n])
                 {
