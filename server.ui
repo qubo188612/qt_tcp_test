@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1054</width>
-    <height>526</height>
+    <height>660</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
      <x>0</x>
      <y>150</y>
      <width>382</width>
-     <height>261</height>
+     <height>371</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -82,7 +82,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>400</y>
+     <y>510</y>
      <width>382</width>
      <height>81</height>
     </rect>
@@ -104,7 +104,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>470</y>
+     <y>600</y>
      <width>344</width>
      <height>49</height>
     </rect>
@@ -260,7 +260,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>写入坐标</string>
+    <string>写入6维坐标</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_6">
@@ -344,10 +344,10 @@
   <widget class="QTextBrowser" name="record_2">
    <property name="geometry">
     <rect>
-     <x>570</x>
+     <x>630</x>
      <y>30</y>
-     <width>471</width>
-     <height>381</height>
+     <width>411</width>
+     <height>581</height>
     </rect>
    </property>
   </widget>
@@ -355,7 +355,7 @@
    <property name="geometry">
     <rect>
      <x>630</x>
-     <y>420</y>
+     <y>620</y>
      <width>101</width>
      <height>25</height>
     </rect>
@@ -365,7 +365,7 @@
    <property name="geometry">
     <rect>
      <x>570</x>
-     <y>420</y>
+     <y>620</y>
      <width>51</width>
      <height>25</height>
     </rect>
@@ -391,7 +391,7 @@
    <property name="geometry">
     <rect>
      <x>760</x>
-     <y>420</y>
+     <y>620</y>
      <width>51</width>
      <height>25</height>
     </rect>
@@ -404,7 +404,7 @@
    <property name="geometry">
     <rect>
      <x>800</x>
-     <y>420</y>
+     <y>620</y>
      <width>101</width>
      <height>25</height>
     </rect>
@@ -414,7 +414,7 @@
    <property name="geometry">
     <rect>
      <x>930</x>
-     <y>420</y>
+     <y>620</y>
      <width>101</width>
      <height>25</height>
     </rect>
@@ -434,6 +434,209 @@
    </property>
    <property name="text">
     <string>kawasaki_json</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_15">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>320</y>
+     <width>71</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>延迟:ms</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_16">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>370</y>
+     <width>181</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>搜索结果:(0失败,0xff成功)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_17">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>420</y>
+     <width>131</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>焊缝Y坐标:0.01mm</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_18">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>470</y>
+     <width>141</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>焊缝Z坐标:0.01mm</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_19">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>520</y>
+     <width>131</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>焊缝宽度:0.01mm</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_20">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>570</y>
+     <width>121</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>焊缝高度:0.01mm</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_delay">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>340</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_searchstat">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>390</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_weldY">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>440</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_weldZ">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>490</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_weldwidth">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>540</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edit_weldheight">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>590</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="poswriteBtn_2">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>630</y>
+     <width>101</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>写入</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_daley">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>320</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>失败</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_searchstat">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>370</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>失败</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_pos2">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>420</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>失败</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_size2">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>520</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>失败</string>
    </property>
   </widget>
  </widget>

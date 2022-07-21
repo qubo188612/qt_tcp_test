@@ -3,10 +3,18 @@
 
 #define MODBUS_REGISTERS_MAXNUM      400//125    //寄存器最大值//MODBUS_MAX_READ_REGISTERS每次连续读取最大值
 
-#define MODBUS_ADD_POS      1           //坐标位置存储地址0x01
-#define MODBUS_ADD_MOVETO   50          //移动位置存储地址0x32
-#define MODBUS_ADD_LASER    257         //激光状态存储地址0x101
-#define MODBUS_ADD_TASKNUM  258         //任务号存储地址0x102
+
+#define MODBUS_ADD_VERSION      0           //版本号
+#define MODBUS_ADD_DELAY        1           //延迟时间
+#define MODBUS_ADD_SEARCHSTAT   2           //搜索焊缝状态
+#define MODBUS_ADD_WELD_Y_POS   3           //焊缝Y轴坐标
+#define MODBUS_ADD_WELD_Z_POS   4           //焊缝Z轴坐标
+#define MODBUS_ADD_WELD_W_SIZE  5           //焊缝宽度尺寸
+#define MODBUS_ADD_WELD_H_SIZE  6           //焊缝高度尺寸
+#define MODBUS_ADD_POS          30          //6维坐标位置存储地址0x1e
+#define MODBUS_ADD_MOVETO       50          //机器人移动位置存储地址0x32
+#define MODBUS_ADD_LASER        257         //激光状态存储地址0x101
+#define MODBUS_ADD_TASKNUM      258         //任务号存储地址0x102
 
 
 #define ASK_GETPOS_ASCII        "GetPos:"   //请求坐标
@@ -44,14 +52,26 @@
 #define ASE_TASKNUM_KEY_KAWASAKI        "tasknum"           //答复任务号KEY可
 #define ASE_TASKNUM_SETOK_KAWASAKI      " ok"               //设置任务号成功
 #define ASE_TASKNUM_SETNG_KAWASAKI      " ng"               //设置任务号失败
+#define ASK_DELAY_KEY_KAWASAKI          "getdalay"          //请求获取延迟KEY
+#define ASK_DELAY_ONCE_KAWASAKI         "once"              //请求获取延迟一次
+#define ASE_DELAY_KEY_KAWASAKI          "getdalay"          //答复获取延迟一次
+#define ASE_DELAY_FAILED_KAWASAKI       "failed"            //答复获取延迟失败
+#define ASK_SEARCHSTAT_KEY_KAWASAKI     "getsearchstat"     //请求获取搜索状态KEY
+#define ASK_SEARCHSTAT_ONCE_KAWASAKI    "once"              //请求获取搜索状态一次
+#define ASE_SEARCHSTAT_KEY_KAWASAKI     "getsearchstat"     //答复获取搜索状态一次
+#define ASE_SEARCHSTAT_FAILED_KAWASAKI  "failed"            //答复获取搜索状态失败
 #define ASK_POS2_KEY_KAWASAKI           "getpos2"           //请求获取2维坐标KEY
-#define ASK_POS2_ONCE_KAWASAKI          "once"              //请求获取2维坐标KEY一次
-#define ASE_POS2_KEY_KAWASAKI           "getpos2"           //答复获取2维坐标KEY
-#define ASE_POS2_FAILED_KAWASAKI        "failed"            //答复获取2维坐标KEY一次失败
+#define ASK_POS2_ONCE_KAWASAKI          "once"              //请求获取2维坐标一次
+#define ASE_POS2_KEY_KAWASAKI           "getpos2"           //答复获取2维坐标一次
+#define ASE_POS2_FAILED_KAWASAKI        "failed"            //答复获取2维坐标失败
+#define ASK_SIZE2_KEY_KAWASAKI          "getsize2"          //请求获取2维尺寸KEY
+#define ASK_SIZE2_ONCE_KAWASAKI         "once"              //请求获取2维尺寸一次
+#define ASE_SIZE2_KEY_KAWASAKI          "getsize2"          //答复获取2维尺寸一次
+#define ASE_SIZE2_FAILED_KAWASAKI       "failed"            //答复获取2维尺寸失败
 #define ASK_POS6_KEY_KAWASAKI           "getpos6"           //请求获取6维坐标KEY
-#define ASK_POS6_ONCE_KAWASAKI          "once"              //请求获取6维坐标KEY一次
-#define ASE_POS6_KEY_KAWASAKI           "getpos6"           //答复获取6维坐标KEY
-#define ASE_POS6_FAILED_KAWASAKI        "failed"            //答复获取6维坐标KEY一次失败
+#define ASK_POS6_ONCE_KAWASAKI          "once"              //请求获取6维坐标一次
+#define ASE_POS6_KEY_KAWASAKI           "getpos6"           //答复获取6维坐标一次
+#define ASE_POS6_FAILED_KAWASAKI        "failed"            //答复获取6维坐标失败
 
 
 #endif // GLOBAL_H

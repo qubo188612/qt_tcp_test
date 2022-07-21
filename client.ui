@@ -193,7 +193,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>获取坐标</string>
+    <string>获取6维坐标</string>
    </property>
   </widget>
   <widget class="QLabel" name="strpos">
@@ -530,6 +530,19 @@
    </property>
    <property name="text">
     <string>写入任务号</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="gitallinfoBtn">
+   <property name="geometry">
+    <rect>
+     <x>550</x>
+     <y>130</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>获取信息</string>
    </property>
   </widget>
  </widget>

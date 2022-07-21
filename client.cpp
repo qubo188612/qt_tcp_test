@@ -25,6 +25,7 @@ Client::Client(QWidget *parent) :
     ui->label_6->hide();
     ui->edit_tasknum->hide();
     ui->tasknumwriteBtn->hide();
+    ui->gitallinfoBtn->hide();
 
     connect(ui->radio_1,&QRadioButton::clicked,[=](){
         link_mod=LINK_MODBUS_TCP;
@@ -36,6 +37,7 @@ Client::Client(QWidget *parent) :
         ui->label_6->hide();
         ui->edit_tasknum->hide();
         ui->tasknumwriteBtn->hide();
+        ui->gitallinfoBtn->hide();
     });
     connect(ui->radio_2,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_ASCII;
@@ -47,6 +49,7 @@ Client::Client(QWidget *parent) :
         ui->label_6->hide();
         ui->edit_tasknum->hide();
         ui->tasknumwriteBtn->hide();
+        ui->gitallinfoBtn->hide();
     });
     connect(ui->radio_3,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_RTU;
@@ -58,6 +61,7 @@ Client::Client(QWidget *parent) :
         ui->label_6->hide();
         ui->edit_tasknum->hide();
         ui->tasknumwriteBtn->hide();
+        ui->gitallinfoBtn->hide();
     });
     connect(ui->radio_4,&QRadioButton::clicked,[=](){
         link_mod=LINK_KAWASAKI;
@@ -69,6 +73,7 @@ Client::Client(QWidget *parent) :
         ui->label_6->show();
         ui->edit_tasknum->show();
         ui->tasknumwriteBtn->show();
+        ui->gitallinfoBtn->show();
     });
 
     ui->edit_pos_X->setText("61.606");
@@ -100,7 +105,13 @@ Client::Client(QWidget *parent) :
                 ui->sendBtn->setEnabled(true);
                 ui->sendBtn_2->setEnabled(true);
                 ui->getposBtn->setEnabled(true);
-                ui->moveBtn->setEnabled(true);
+                ui->moveBtn->setEnabled(true);                
+                ui->laseropenBtn->setEnabled(true);
+                ui->lasercloseBtn->setEnabled(true);
+                ui->cameraopenBtn->setEnabled(true);
+                ui->cameracloseBtn->setEnabled(true);
+                ui->tasknumwriteBtn->setEnabled(true);
+                ui->gitallinfoBtn->setEnabled(true);
             }
             else
             {
@@ -115,6 +126,12 @@ Client::Client(QWidget *parent) :
                 ui->sendBtn_2->setEnabled(false);
                 ui->getposBtn->setEnabled(false);
                 ui->moveBtn->setEnabled(false);
+                ui->laseropenBtn->setEnabled(false);
+                ui->lasercloseBtn->setEnabled(false);
+                ui->cameraopenBtn->setEnabled(false);
+                ui->cameracloseBtn->setEnabled(false);
+                ui->tasknumwriteBtn->setEnabled(false);
+                ui->gitallinfoBtn->setEnabled(false);
             }
         }
         else if(link_mod==LINK_MODBUS_TCP)
@@ -141,6 +158,12 @@ Client::Client(QWidget *parent) :
                     ui->sendBtn_2->setEnabled(true);
                     ui->getposBtn->setEnabled(true);
                     ui->moveBtn->setEnabled(true);
+                    ui->laseropenBtn->setEnabled(true);
+                    ui->lasercloseBtn->setEnabled(true);
+                    ui->cameraopenBtn->setEnabled(true);
+                    ui->cameracloseBtn->setEnabled(true);
+                    ui->tasknumwriteBtn->setEnabled(true);
+                    ui->gitallinfoBtn->setEnabled(true);
                 }
             }
             else
@@ -157,6 +180,12 @@ Client::Client(QWidget *parent) :
                 ui->sendBtn_2->setEnabled(false);
                 ui->getposBtn->setEnabled(false);
                 ui->moveBtn->setEnabled(false);
+                ui->laseropenBtn->setEnabled(false);
+                ui->lasercloseBtn->setEnabled(false);
+                ui->cameraopenBtn->setEnabled(false);
+                ui->cameracloseBtn->setEnabled(false);
+                ui->tasknumwriteBtn->setEnabled(false);
+                ui->gitallinfoBtn->setEnabled(false);
             }
         }
     });
@@ -468,6 +497,20 @@ Client::Client(QWidget *parent) :
         }
     });
 
+    //获取信息
+    connect(ui->gitallinfoBtn,&QPushButton::clicked,[=](){
+        if(link_mod==LINK_KAWASAKI)
+        {
+            QJsonObject json;
+            json.insert(ASK_DELAY_KEY_KAWASAKI, ASK_DELAY_ONCE_KAWASAKI);
+            json.insert(ASK_SEARCHSTAT_KEY_KAWASAKI, ASK_SEARCHSTAT_ONCE_KAWASAKI);
+            json.insert(ASK_POS2_KEY_KAWASAKI, ASK_POS2_ONCE_KAWASAKI);
+            json.insert(ASK_SIZE2_KEY_KAWASAKI, ASK_SIZE2_ONCE_KAWASAKI);
+            QString msg=JsonToQstring(json);
+            client->write(msg.toUtf8());
+            ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+    });
 
     //客户端接收数据
     connect(client,&QTcpSocket::readyRead,[=](){
@@ -646,6 +689,30 @@ void Client::ReceiveMsg(QByteArray msg)
                          }
                     }
                 }
+                else if(keyString==ASE_DELAY_KEY_KAWASAKI)//获取延迟
+                {
+                    QString valueString=it.value().toString();
+                    if(valueString==ASE_DELAY_FAILED_KAWASAKI)//获取1次失败
+                    {
+                        ui->record->append("获取延迟失败");
+                    }
+                    else
+                    {
+                        ui->record->append("获取延迟:"+valueString);
+                    }
+                }
+                else if(keyString==ASE_SEARCHSTAT_KEY_KAWASAKI)//获取搜索状态
+                {
+                    QString valueString=it.value().toString();
+                    if(valueString==ASE_SEARCHSTAT_FAILED_KAWASAKI)//获取1次失败
+                    {
+                        ui->record->append("获取搜索状态失败");
+                    }
+                    else
+                    {
+                        ui->record->append("获取搜索状态:"+valueString);
+                    }
+                }
                 else if(keyString==ASE_POS2_KEY_KAWASAKI)//获取二维坐标
                 {
                     switch(it->type())
@@ -662,17 +729,53 @@ void Client::ReceiveMsg(QByteArray msg)
                         case QJsonValue::Array:
                         {
                             QJsonArray versionArray=it.value().toArray();
-                            QString msg="解析:坐标pos2(";
+                            QString msg="获取焊缝坐标pos2:Y=";
                             for(int i=0;i<versionArray.size();i++)
                             {
                                 msg=msg+QString::number(versionArray[i].toDouble());
                                 if(i<versionArray.size()-1)
                                 {
-                                    msg=msg+",";
+                                    msg=msg+"mm,Z=";
                                 }
                                 else
                                 {
-                                    msg=msg+")";
+                                    msg=msg+"mm";
+                                }
+                            }
+                            ui->record->append(msg);
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                }
+                else if(keyString==ASE_SIZE2_KEY_KAWASAKI)//获取二维尺寸
+                {
+                    switch(it->type())
+                    {
+                        case QJsonValue::String:
+                        {
+                            QString valueString=it.value().toString();
+                            if(valueString==ASE_SIZE2_FAILED_KAWASAKI)//获取1次失败
+                            {
+                                ui->record->append("获取二维尺寸失败");
+                            }
+                        }
+                        break;
+                        case QJsonValue::Array:
+                        {
+                            QJsonArray versionArray=it.value().toArray();
+                            QString msg="获取焊缝尺寸size2:宽度=";
+                            for(int i=0;i<versionArray.size();i++)
+                            {
+                                msg=msg+QString::number(versionArray[i].toDouble());
+                                if(i<versionArray.size()-1)
+                                {
+                                    msg=msg+"mm,高度=";
+                                }
+                                else
+                                {
+                                    msg=msg+"mm";
                                 }
                             }
                             ui->record->append(msg);

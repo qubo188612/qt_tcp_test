@@ -29,6 +29,12 @@ Server::Server(QWidget *parent)
     ui->edit_ry->setText("50.505");
     ui->edit_rz->setText("60.606");
 
+    ui->edit_delay->setText("100");
+    ui->edit_searchstat->setText("0xff");
+    ui->edit_weldY->setText("3003");
+    ui->edit_weldZ->setText("4004");
+    ui->edit_weldwidth->setText("5005");
+    ui->edit_weldheight->setText("6006");
 
 
     ui->sendBtn->setEnabled(false);
@@ -219,6 +225,41 @@ Server::Server(QWidget *parent)
             f_tab_reg[4]=PosRY;
             f_tab_reg[5]=PosRZ;
         }
+    });
+
+    connect(ui->poswriteBtn_2,&QPushButton::clicked,[=](){
+        std::string strdata;
+        u_int16_t data_delay,data_searchstat,data_Weld_Y,data_Weld_Z,data_Weld_W,data_Weld_H;
+        u_int16_t *u16_reg=(u_int16_t *)mod_registers;
+        QString msg;
+
+        strdata=ui->edit_delay->text().toStdString();
+        data_delay=std::stoi(strdata,NULL,0);
+        strdata=ui->edit_searchstat->text().toStdString();
+        data_searchstat=std::stoi(strdata,NULL,0);
+        strdata=ui->edit_weldY->text().toStdString();
+        data_Weld_Y=std::stoi(strdata,NULL,0);
+        strdata=ui->edit_weldZ->text().toStdString();
+        data_Weld_Z=std::stoi(strdata,NULL,0);
+        strdata=ui->edit_weldwidth->text().toStdString();
+        data_Weld_W=std::stoi(strdata,NULL,0);
+        strdata=ui->edit_weldheight->text().toStdString();
+        data_Weld_H=std::stoi(strdata,NULL,0);
+        u16_reg[MODBUS_ADD_DELAY]=data_delay;
+        u16_reg[MODBUS_ADD_SEARCHSTAT]=data_searchstat;
+        u16_reg[MODBUS_ADD_WELD_Y_POS]=data_Weld_Y;
+        u16_reg[MODBUS_ADD_WELD_Z_POS]=data_Weld_Z;
+        u16_reg[MODBUS_ADD_WELD_W_SIZE]=data_Weld_W;
+        u16_reg[MODBUS_ADD_WELD_H_SIZE]=data_Weld_H;
+
+        msg="设置:\n延迟:"+QString::number(data_delay)+"ms\n搜索状态:"
+                +QString::number(data_searchstat)+"\n焊缝坐标Y:"
+                +QString::number(data_Weld_Y/100.0)+"mm\n焊缝坐标Z:"
+                +QString::number(data_Weld_Z/100.0)+"mm\n焊缝宽度:"
+                +QString::number(data_Weld_W/100.0)+"mm\n焊缝高度:"
+                +QString::number(data_Weld_H/100.0)+"mm";
+        ui->record->append(msg); // 将数据显示到记录框
+        init_show_registers_list();
     });
 
     connect(ui->addwriteBtn,&QPushButton::clicked,[=](){
@@ -461,6 +502,69 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                 init_show_registers_list();
                 ui->record->append("解析:设置任务号:"+valueString);
             }
+            else if(keyString==ASK_DELAY_KEY_KAWASAKI)//获取焊缝延迟
+            {
+                switch(it->type())
+                {
+                    case QJsonValue::String:
+                    {
+                        QString valueString=it.value().toString();
+                        if(valueString==ASK_DELAY_ONCE_KAWASAKI)//获取1次
+                        {
+                            u_int16_t u16_data=mod_registers[MODBUS_ADD_DELAY];
+                            QString msg;
+                            if(ui->checkBox_daley->isChecked()==true)
+                            {
+                                msg=ASE_DELAY_FAILED_KAWASAKI;
+                            }
+                            else
+                            {
+                                msg=QString::number(u16_data);
+                            }
+                            anser.insert(ASE_DELAY_KEY_KAWASAKI, msg);
+                            ui->record->append("解析:请求获取1次延迟");
+                        }
+                    }
+                    break;
+                    default:
+                    break;
+                 }
+            }
+            else if(keyString==ASK_SEARCHSTAT_KEY_KAWASAKI)//获取搜索状态
+            {
+                switch(it->type())
+                {
+                    case QJsonValue::String:
+                    {
+                        QString valueString=it.value().toString();
+                        if(valueString==ASK_SEARCHSTAT_ONCE_KAWASAKI)//获取1次
+                        {
+                            u_int16_t u16_data=mod_registers[MODBUS_ADD_SEARCHSTAT];
+                            QString msg="ng";
+                            if(ui->checkBox_searchstat->isChecked()==true)
+                            {
+                                msg=ASE_SEARCHSTAT_FAILED_KAWASAKI;
+                            }
+                            else
+                            {
+                                if(u16_data==0)
+                                {
+                                    msg="ng";
+                                }
+                                else if(u16_data==255)
+                                {
+                                    msg="ok";
+                                }
+                            }
+                            anser.insert(ASE_SEARCHSTAT_KEY_KAWASAKI, msg);
+                            ui->record->append("解析:请求获取1次搜索状态");
+                        }
+                    }
+                    break;
+                    default:
+                    break;
+                 }
+            }
             else if(keyString==ASK_POS2_KEY_KAWASAKI)//获取2维坐标
             {
                 switch(it->type())
@@ -469,15 +573,51 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                     {
                         QString valueString=it.value().toString();
                         if(valueString==ASK_POS2_ONCE_KAWASAKI)//获取1次
-                        {
-                            float *freg=(float *)&mod_registers[MODBUS_ADD_POS];
+                        { 
+                            float f16_weld_Y=mod_registers[MODBUS_ADD_WELD_Y_POS]/100.0;
+                            float f16_weld_Z=mod_registers[MODBUS_ADD_WELD_Z_POS]/100.0;
                             QJsonArray versionArray;
-                            for(int i=0;i<2;i++)
+                            if(ui->checkBox_pos2->isChecked()==true)
                             {
-                                versionArray.append(freg[i]);
+                                anser.insert(ASE_POS2_KEY_KAWASAKI, ASE_POS2_FAILED_KAWASAKI);
                             }
-                            anser.insert(ASE_POS2_KEY_KAWASAKI, QJsonValue(versionArray));
+                            else
+                            {
+                                versionArray.append(f16_weld_Y);
+                                versionArray.append(f16_weld_Z);
+                                anser.insert(ASE_POS2_KEY_KAWASAKI, QJsonValue(versionArray));
+                            }
                             ui->record->append("解析:请求获取1次2维坐标");
+                        }
+                    }
+                    break;
+                    default:
+                    break;
+                 }
+            }
+            else if(keyString==ASK_SIZE2_KEY_KAWASAKI)//获取焊缝宽高
+            {
+                switch(it->type())
+                {
+                    case QJsonValue::String:
+                    {
+                        QString valueString=it.value().toString();
+                        if(valueString==ASK_SIZE2_ONCE_KAWASAKI)//获取1次
+                        {
+                            float f16_weld_W=mod_registers[MODBUS_ADD_WELD_W_SIZE]/100.0;
+                            float f16_weld_H=mod_registers[MODBUS_ADD_WELD_H_SIZE]/100.0;
+                            QJsonArray versionArray;
+                            if(ui->checkBox_size2->isChecked()==true)
+                            {
+                                 anser.insert(ASE_SIZE2_KEY_KAWASAKI, ASE_SIZE2_FAILED_KAWASAKI);
+                            }
+                            else
+                            {
+                                versionArray.append(f16_weld_W);
+                                versionArray.append(f16_weld_H);
+                                anser.insert(ASE_SIZE2_KEY_KAWASAKI, QJsonValue(versionArray));
+                            }
+                            ui->record->append("解析:请求获取1次2维尺寸");
                         }
                     }
                     break;
