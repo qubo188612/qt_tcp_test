@@ -52,9 +52,9 @@
 #define ASE_TASKNUM_KEY_KAWASAKI        "tasknum"           //答复任务号KEY可
 #define ASE_TASKNUM_SETOK_KAWASAKI      " ok"               //设置任务号成功
 #define ASE_TASKNUM_SETNG_KAWASAKI      " ng"               //设置任务号失败
-#define ASK_DELAY_KEY_KAWASAKI          "getdalay"          //请求获取延迟KEY
+#define ASK_DELAY_KEY_KAWASAKI          "getdelay"          //请求获取延迟KEY
 #define ASK_DELAY_ONCE_KAWASAKI         "once"              //请求获取延迟一次
-#define ASE_DELAY_KEY_KAWASAKI          "getdalay"          //答复获取延迟一次
+#define ASE_DELAY_KEY_KAWASAKI          "getdelay"          //答复获取延迟一次
 #define ASE_DELAY_FAILED_KAWASAKI       "failed"            //答复获取延迟失败
 #define ASK_SEARCHSTAT_KEY_KAWASAKI     "getsearchstat"     //请求获取搜索状态KEY
 #define ASK_SEARCHSTAT_ONCE_KAWASAKI    "once"              //请求获取搜索状态一次
