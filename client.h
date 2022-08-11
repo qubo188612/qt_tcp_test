@@ -10,11 +10,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
-#define LINK_MODBUS_TCP     0
-#define LINK_NORMAL_ASCII   1
-#define LINK_NORMAL_RTU     2
-#define LINK_KAWASAKI       3
-
 
 namespace Ui {
 class Client;
@@ -31,6 +26,11 @@ public:
 public:
     QTcpSocket *client;
     modbus_t *ctx;
+
+    u_int16_t robot_mod;
+
+private slots:
+    void on_comboBox_currentIndexChanged(int index);
 
 private:
     Ui::Client *ui;

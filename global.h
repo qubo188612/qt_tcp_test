@@ -1,9 +1,21 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#define ROBOT_ZHICHANG      0
+#define ROBOT_NABOTE        1
+
+#define LINK_MODBUS_TCP     0
+#define LINK_NORMAL_ASCII   1
+#define LINK_NORMAL_RTU     2
+#define LINK_KAWASAKI       3
+#define LINK_CUSTOM         4
+
+#define USE_PARENTHESES_INSTEAD_QUOTATION       //json协议用括号代替引号
+#define DEL_SPACE_AND_LINEN                     //json协议去掉\n
+
 #define MODBUS_REGISTERS_MAXNUM      400//125    //寄存器最大值//MODBUS_MAX_READ_REGISTERS每次连续读取最大值
 
-
+//智昌寄存器
 #define MODBUS_ADD_VERSION      0           //版本号
 #define MODBUS_ADD_DELAY        1           //延迟时间
 #define MODBUS_ADD_SEARCHSTAT   2           //搜索焊缝状态
@@ -15,6 +27,16 @@
 #define MODBUS_ADD_MOVETO       50          //机器人移动位置存储地址0x32
 #define MODBUS_ADD_LASER        257         //激光状态存储地址0x101
 #define MODBUS_ADD_TASKNUM      258         //任务号存储地址0x102
+
+//摩卡纳伯特寄存器
+#define MODBUS_NABO_TASKNUM      0x00           //任务号存储地址0
+#define MODBUS_NABO_LASER        0x01           //激光状态存储地址1
+#define MODBUS_NABO_SEARCH       0x02           //寻位状态存储地址2
+#define MODBUS_NABO_WELDING      0x03           //跟踪状态存储地址3
+#define MODBUS_NABO_SEARCHSTAT   0x10           //搜索焊缝状态
+#define MODBUS_NABO_WELD_X_POS   0x11           //焊缝X轴坐标
+#define MODBUS_NABO_WELD_Y_POS   0x12           //焊缝Y轴坐标
+#define MODBUS_NABO_WELD_Z_POS   0x13           //焊缝Z轴坐标
 
 
 #define ASK_GETPOS_ASCII        "GetPos:"   //请求坐标

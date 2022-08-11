@@ -16,11 +16,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#define LINK_MODBUS_TCP     0
-#define LINK_NORMAL_ASCII   1
-#define LINK_NORMAL_RTU     2
-#define LINK_KAWASAKI       3
-
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Server; }
@@ -42,6 +37,8 @@ public:
     modbustcpThread *thread1;
 
 public:
+    u_int16_t robot_mod;
+
     QTcpServer * listen;
     QTcpSocket * conn;
     modbus_t * ctx;
@@ -62,6 +59,7 @@ public:
 private slots:
     void init_show_registers_list();
 
+    void on_comboBox_currentIndexChanged(int index);
 };
 
 class modbustcpThread : public QThread

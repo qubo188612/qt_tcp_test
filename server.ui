@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1054</width>
+    <width>1053</width>
     <height>660</height>
    </rect>
   </property>
@@ -345,9 +345,9 @@
    <property name="geometry">
     <rect>
      <x>630</x>
-     <y>30</y>
-     <width>411</width>
-     <height>581</height>
+     <y>70</y>
+     <width>401</width>
+     <height>541</height>
     </rect>
    </property>
   </widget>
@@ -378,13 +378,13 @@
    <property name="geometry">
     <rect>
      <x>570</x>
-     <y>0</y>
-     <width>131</width>
+     <y>40</y>
+     <width>171</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
-    <string>当前寄存器值：</string>
+    <string>当前服务器寄存器值：</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_14">
@@ -638,6 +638,52 @@
    <property name="text">
     <string>失败</string>
    </property>
+  </widget>
+  <widget class="QRadioButton" name="radio_5">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>100</y>
+     <width>121</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>custom</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_22">
+   <property name="geometry">
+    <rect>
+     <x>570</x>
+     <y>10</y>
+     <width>111</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>寄存器规则：</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBox">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>10</y>
+     <width>141</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>智昌</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>摩卡-纳伯特</string>
+    </property>
+   </item>
   </widget>
  </widget>
  <resources/>

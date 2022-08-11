@@ -13,6 +13,9 @@ Server::Server(QWidget *parent)
     connect(thread1, SIGNAL(Send_show_registers_list()), this, SLOT(init_show_registers_list()));
 
 
+    robot_mod=ROBOT_ZHICHANG;
+    ui->comboBox->setCurrentIndex(robot_mod);
+
     link_mod=LINK_MODBUS_TCP;
     server_state=0;
 
@@ -55,6 +58,9 @@ Server::Server(QWidget *parent)
     connect(ui->radio_4,&QRadioButton::clicked,[=](){
         link_mod=LINK_KAWASAKI;
     });
+    connect(ui->radio_5,&QRadioButton::clicked,[=](){
+        link_mod=LINK_CUSTOM;
+    });
 
     mb_mapping = modbus_mapping_new(
         0, 0,
@@ -66,7 +72,7 @@ Server::Server(QWidget *parent)
 
     //创建监听套接字
     connect(ui->startserverBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
             if(server_state==0)
             {
@@ -85,7 +91,7 @@ Server::Server(QWidget *parent)
                     // 保证conn对象有效,所以放到新连接这里
                     // 接收数据
                     connect(conn,&QTcpSocket::readyRead,[=](){
-                        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
+                        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
                         {
                             QByteArray artemp="接收:";
                             QByteArray array = conn->readAll();
@@ -156,7 +162,7 @@ Server::Server(QWidget *parent)
     });
 
     connect(ui->sendBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
             QString msg = ui->msgEdit->toPlainText();
 
@@ -211,7 +217,7 @@ Server::Server(QWidget *parent)
         freg[5]=PosRZ;
         init_show_registers_list();
 
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
 
         }
@@ -245,12 +251,30 @@ Server::Server(QWidget *parent)
         data_Weld_W=std::stoi(strdata,NULL,0);
         strdata=ui->edit_weldheight->text().toStdString();
         data_Weld_H=std::stoi(strdata,NULL,0);
-        u16_reg[MODBUS_ADD_DELAY]=data_delay;
-        u16_reg[MODBUS_ADD_SEARCHSTAT]=data_searchstat;
-        u16_reg[MODBUS_ADD_WELD_Y_POS]=data_Weld_Y;
-        u16_reg[MODBUS_ADD_WELD_Z_POS]=data_Weld_Z;
-        u16_reg[MODBUS_ADD_WELD_W_SIZE]=data_Weld_W;
-        u16_reg[MODBUS_ADD_WELD_H_SIZE]=data_Weld_H;
+        if(robot_mod==ROBOT_ZHICHANG)
+        {
+            u16_reg[MODBUS_ADD_DELAY]=data_delay;
+            u16_reg[MODBUS_ADD_SEARCHSTAT]=data_searchstat;
+            u16_reg[MODBUS_ADD_WELD_Y_POS]=data_Weld_Y;
+            u16_reg[MODBUS_ADD_WELD_Z_POS]=data_Weld_Z;
+            u16_reg[MODBUS_ADD_WELD_W_SIZE]=data_Weld_W;
+            u16_reg[MODBUS_ADD_WELD_H_SIZE]=data_Weld_H;
+            mb_mapping->tab_registers[MODBUS_ADD_DELAY]=data_delay;
+            mb_mapping->tab_registers[MODBUS_ADD_SEARCHSTAT]=data_searchstat;
+            mb_mapping->tab_registers[MODBUS_ADD_WELD_Y_POS]=data_Weld_Y;
+            mb_mapping->tab_registers[MODBUS_ADD_WELD_Z_POS]=data_Weld_Z;
+            mb_mapping->tab_registers[MODBUS_ADD_WELD_W_SIZE]=data_Weld_W;
+            mb_mapping->tab_registers[MODBUS_ADD_WELD_H_SIZE]=data_Weld_H;
+        }
+        else if(robot_mod==ROBOT_NABOTE)
+        {
+            u16_reg[MODBUS_NABO_SEARCHSTAT]=data_searchstat;
+            u16_reg[MODBUS_NABO_WELD_Y_POS]=data_Weld_Y;
+            u16_reg[MODBUS_NABO_WELD_Z_POS]=data_Weld_Z;
+            mb_mapping->tab_registers[MODBUS_NABO_SEARCHSTAT]=data_searchstat;
+            mb_mapping->tab_registers[MODBUS_NABO_WELD_Y_POS]=data_Weld_Y;
+            mb_mapping->tab_registers[MODBUS_NABO_WELD_Z_POS]=data_Weld_Z;
+        }
 
         msg="设置:\n延迟:"+QString::number(data_delay)+"ms\n搜索状态:"
                 +QString::number(data_searchstat)+"\n焊缝坐标Y:"
@@ -450,6 +474,15 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
     {
         /***********************/
         //这里写数据
+    #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+        for(unsigned int n=0;n<array.size();n++)
+        {
+            if(array[n]=='('||array[n]==')')
+            {
+               array[n]='"';
+            }
+        }
+    #endif
         QJsonObject json=QstringToJson(array);
         QJsonObject::Iterator it;
 
@@ -462,14 +495,28 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                 QString valueString=it.value().toString();
                 if(valueString==ASK_LASER_OPEN_KAWASAKI)//请求开激光
                 {
-                    mod_registers[MODBUS_ADD_LASER]=1;
+                    if(robot_mod==ROBOT_ZHICHANG)
+                    {
+                        mod_registers[MODBUS_ADD_LASER]=1;
+                    }
+                    else
+                    {
+                        mod_registers[MODBUS_NABO_LASER]=1;
+                    }
                     anser.insert(ASE_LASER_KEY_KAWASAKI, ASE_LASER_OPENOK_KAWASAKI);
                     init_show_registers_list();
                     ui->record->append("解析:请求开激光"); // 将数据显示到记录框
                 }
                 else if(valueString==ASK_LASER_CLOSE_KAWASAKI)//请求关激光
                 {
-                    mod_registers[MODBUS_ADD_LASER]=0;
+                    if(robot_mod==ROBOT_ZHICHANG)
+                    {
+                        mod_registers[MODBUS_ADD_LASER]=0;
+                    }
+                    else
+                    {
+                        mod_registers[MODBUS_NABO_LASER]=0;
+                    }
                     anser.insert(ASE_LASER_KEY_KAWASAKI, ASE_LASER_CLOSEOK_KAWASAKI);
                     init_show_registers_list();
                     ui->record->append("解析:请求关激光");
@@ -480,14 +527,28 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                 QString valueString=it.value().toString();
                 if(valueString==ASK_CAMERA_OPEN_KAWASAKI)//请求开相机
                 {
-                    mod_registers[MODBUS_ADD_LASER]=1;
+                    if(robot_mod==ROBOT_ZHICHANG)
+                    {
+                        mod_registers[MODBUS_ADD_LASER]=1;
+                    }
+                    else
+                    {
+                        mod_registers[MODBUS_NABO_WELDING]=1;
+                    }
                     anser.insert(ASE_CAMERA_KEY_KAWASAKI, ASE_CAMERA_OPENOK_KAWASAKI);
                     init_show_registers_list();
                     ui->record->append("解析:请求开相机"); // 将数据显示到记录框
                 }
                 else if(valueString==ASK_CAMERA_CLOSE_KAWASAKI)//请求关相机
                 {
-                    mod_registers[MODBUS_ADD_LASER]=0;
+                    if(robot_mod==ROBOT_ZHICHANG)
+                    {
+                        mod_registers[MODBUS_ADD_LASER]=0;
+                    }
+                    else
+                    {
+                        mod_registers[MODBUS_NABO_WELDING]=0;
+                    }
                     anser.insert(ASE_CAMERA_KEY_KAWASAKI, ASE_CAMERA_CLOSEOK_KAWASAKI);
                     init_show_registers_list();
                     ui->record->append("解析:请求关相机");
@@ -497,7 +558,14 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
             {
                 QString valueString=it.value().toString();
                 int ID=valueString.toInt();
-                mod_registers[MODBUS_ADD_TASKNUM]=ID;
+                if(robot_mod==ROBOT_ZHICHANG)
+                {
+                    mod_registers[MODBUS_ADD_TASKNUM]=ID;
+                }
+                else
+                {
+                    mod_registers[MODBUS_NABO_TASKNUM]=ID;
+                }
                 anser.insert(ASE_TASKNUM_KEY_KAWASAKI, valueString+ASE_TASKNUM_SETOK_KAWASAKI);
                 init_show_registers_list();
                 ui->record->append("解析:设置任务号:"+valueString);
@@ -540,6 +608,14 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                         if(valueString==ASK_SEARCHSTAT_ONCE_KAWASAKI)//获取1次
                         {
                             u_int16_t u16_data=mod_registers[MODBUS_ADD_SEARCHSTAT];
+                            if(robot_mod==ROBOT_ZHICHANG)
+                            {
+                                u16_data=mod_registers[MODBUS_ADD_SEARCHSTAT];
+                            }
+                            else if(robot_mod==ROBOT_NABOTE)
+                            {
+                                u16_data=mod_registers[MODBUS_NABO_SEARCHSTAT];
+                            }
                             QString msg="ng";
                             if(ui->checkBox_searchstat->isChecked()==true)
                             {
@@ -574,8 +650,20 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
                         QString valueString=it.value().toString();
                         if(valueString==ASK_POS2_ONCE_KAWASAKI)//获取1次
                         { 
-                            float f16_weld_Y=mod_registers[MODBUS_ADD_WELD_Y_POS]/100.0;
-                            float f16_weld_Z=mod_registers[MODBUS_ADD_WELD_Z_POS]/100.0;
+                            int16_t i16_y=mod_registers[MODBUS_ADD_WELD_Y_POS],i16_z=mod_registers[MODBUS_ADD_WELD_Z_POS];
+                            if(robot_mod==ROBOT_ZHICHANG)
+                            {
+                                i16_y=mod_registers[MODBUS_ADD_WELD_Y_POS];
+                                i16_z=mod_registers[MODBUS_ADD_WELD_Z_POS];
+                            }
+                            else if(robot_mod==ROBOT_NABOTE)
+                            {
+                                i16_y=mod_registers[MODBUS_NABO_WELD_Y_POS];
+                                i16_z=mod_registers[MODBUS_NABO_WELD_Z_POS];
+                            }
+
+                            float f16_weld_Y=i16_y/100.0;
+                            float f16_weld_Z=i16_z/100.0;
                             QJsonArray versionArray;
                             if(ui->checkBox_pos2->isChecked()==true)
                             {
@@ -653,9 +741,43 @@ void Server::ReceiveMsg(QByteArray array,QByteArray *sent_array)
         if(anser.size()!=0)
         {
             QString msg=JsonToQstring(anser);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
+        #ifdef DEL_SPACE_AND_LINEN
+            QString msg2;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]!='\n')
+                {
+                    msg2.push_back(msg[n]);
+                }
+            }
+            msg=msg2;
+        #endif
             conn->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
         }
+    }
+    else if(link_mod==LINK_CUSTOM)
+    {
+
     }
 
     *sent_array=outarray;
@@ -672,7 +794,8 @@ void modbustcpThread::run()
     {
         QString server_ip=_p->ui->ip->text();
         QString server_port=_p->ui->port->text();
-        _p->ctx = modbus_new_tcp(server_ip.toUtf8(), server_port.toInt());
+        //_p->ctx = modbus_new_tcp(server_ip.toUtf8(), server_port.toInt());
+        _p->ctx = modbus_new_tcp(NULL, server_port.toInt());
         _p->sock = modbus_tcp_listen(_p->ctx, 1);//最大监听1路
         modbus_tcp_accept(_p->ctx, &_p->sock);
         while(_p->server_state==1)
@@ -724,6 +847,16 @@ QString Server::JsonToQstring(QJsonObject jsonObject)
     return QString(QJsonDocument(jsonObject).toJson());
 }
 
-
-
+void Server::on_comboBox_currentIndexChanged(int index)
+{
+    robot_mod=index;
+    if(robot_mod==ROBOT_ZHICHANG)
+    {
+        ui->edit_searchstat->setText("0xff");
+    }
+    else if(robot_mod==ROBOT_NABOTE)
+    {
+        ui->edit_searchstat->setText("0x01");
+    }
+}
 

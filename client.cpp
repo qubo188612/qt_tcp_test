@@ -16,8 +16,12 @@ Client::Client(QWidget *parent) :
     link_state=0;
     link_mod=LINK_MODBUS_TCP;
 
+    robot_mod=ROBOT_ZHICHANG;
+    ui->comboBox->setCurrentIndex(robot_mod);
+
     ui->radio_1->setChecked(1);
 
+ /*
     ui->laseropenBtn->hide();
     ui->lasercloseBtn->hide();
     ui->cameraopenBtn->hide();
@@ -26,18 +30,19 @@ Client::Client(QWidget *parent) :
     ui->edit_tasknum->hide();
     ui->tasknumwriteBtn->hide();
     ui->gitallinfoBtn->hide();
+*/
 
     connect(ui->radio_1,&QRadioButton::clicked,[=](){
         link_mod=LINK_MODBUS_TCP;
         ui->sendBtn_2->show();
-        ui->laseropenBtn->hide();
-        ui->lasercloseBtn->hide();
-        ui->cameraopenBtn->hide();
-        ui->cameracloseBtn->hide();
-        ui->label_6->hide();
-        ui->edit_tasknum->hide();
-        ui->tasknumwriteBtn->hide();
-        ui->gitallinfoBtn->hide();
+        ui->laseropenBtn->show();
+        ui->lasercloseBtn->show();
+        ui->cameraopenBtn->show();
+        ui->cameracloseBtn->show();
+        ui->label_6->show();
+        ui->edit_tasknum->show();
+        ui->tasknumwriteBtn->show();
+        ui->gitallinfoBtn->show();
     });
     connect(ui->radio_2,&QRadioButton::clicked,[=](){
         link_mod=LINK_NORMAL_ASCII;
@@ -75,6 +80,18 @@ Client::Client(QWidget *parent) :
         ui->tasknumwriteBtn->show();
         ui->gitallinfoBtn->show();
     });
+    connect(ui->radio_5,&QRadioButton::clicked,[=](){
+        link_mod=LINK_CUSTOM;
+        ui->sendBtn_2->hide();
+        ui->laseropenBtn->show();
+        ui->lasercloseBtn->show();
+        ui->cameraopenBtn->show();
+        ui->cameracloseBtn->show();
+        ui->label_6->show();
+        ui->edit_tasknum->show();
+        ui->tasknumwriteBtn->show();
+        ui->gitallinfoBtn->show();
+    });
 
     ui->edit_pos_X->setText("61.606");
     ui->edit_pos_Y->setText("51.505");
@@ -91,7 +108,7 @@ Client::Client(QWidget *parent) :
 
     //连接服务器
     connect(ui->linkBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_NORMAL_RTU||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
             if(link_state==0)
             {
@@ -192,7 +209,7 @@ Client::Client(QWidget *parent) :
 
     //发送编辑框数据
     connect(ui->sendBtn,&QPushButton::clicked,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
             QString msg = ui->msgEdit->toPlainText();
             client->write(msg.toUtf8());
@@ -351,8 +368,31 @@ Client::Client(QWidget *parent) :
          // json.insert(ASK_POS2_KEY_KAWASAKI, ASK_POS2_ONCE_KAWASAKI);
             json.insert(ASK_POS6_KEY_KAWASAKI, ASK_POS6_ONCE_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
@@ -434,6 +474,10 @@ Client::Client(QWidget *parent) :
         {
 
         }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
+        }
     });
 
     //开激光指令
@@ -443,8 +487,62 @@ Client::Client(QWidget *parent) :
             QJsonObject json;
             json.insert(ASK_LASER_KEY_KAWASAKI, ASK_LASER_OPEN_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            uint16_t tab_reg[1];
+
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                tab_reg[0]=0xff;
+                int rc=modbus_write_registers(ctx,MODBUS_ADD_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("激光器启动设置失败");
+                }
+                else
+                {
+                    ui->record->append("激光器启动设置成功");
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                tab_reg[0]=1;
+                int rc=modbus_write_registers(ctx,MODBUS_NABO_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("激光器启动设置失败");
+                }
+                else
+                {
+                    ui->record->append("激光器启动设置成功");
+                }
+            }
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
@@ -455,8 +553,60 @@ Client::Client(QWidget *parent) :
             QJsonObject json;
             json.insert(ASK_LASER_KEY_KAWASAKI, ASK_LASER_CLOSE_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            uint16_t tab_reg[1];
+            tab_reg[0]=0;
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_ADD_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("激光器关闭设置失败");
+                }
+                else
+                {
+                    ui->record->append("激光器关闭设置成功");
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_NABO_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("激光器关闭设置失败");
+                }
+                else
+                {
+                    ui->record->append("激光器关闭设置成功");
+                }
+            }
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
@@ -467,8 +617,57 @@ Client::Client(QWidget *parent) :
             QJsonObject json;
             json.insert(ASK_CAMERA_KEY_KAWASAKI, ASK_CAMERA_OPEN_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            uint16_t tab_reg[1];
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                tab_reg[0]=0xff;
+                int rc=modbus_write_registers(ctx,MODBUS_ADD_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("相机启动设置失败");
+                }
+                else
+                {
+                    ui->record->append("相机启动设置成功");
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                tab_reg[0]=1;
+                int rc=modbus_write_registers(ctx,MODBUS_NABO_WELDING,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("相机启动设置失败");
+                }
+                else
+                {
+                    ui->record->append("相机启动设置成功");
+                }
+            }
         }
     });
 
@@ -479,8 +678,60 @@ Client::Client(QWidget *parent) :
             QJsonObject json;
             json.insert(ASK_CAMERA_KEY_KAWASAKI, ASK_CAMERA_CLOSE_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            uint16_t tab_reg[1];
+            tab_reg[0]=0;
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_ADD_LASER,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("相机关闭设置失败");
+                }
+                else
+                {
+                    ui->record->append("相机关闭设置成功");
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_NABO_WELDING,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("相机关闭设置失败");
+                }
+                else
+                {
+                    ui->record->append("相机关闭设置成功");
+                }
+            }
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
@@ -492,8 +743,60 @@ Client::Client(QWidget *parent) :
             QJsonObject json;
             json.insert(ASK_TASKNUM_KEY_KAWASAKI, ID);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            uint16_t tab_reg[1];
+            tab_reg[0]=ui->edit_tasknum->text().toInt();
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_ADD_TASKNUM,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("任务号设置失败");
+                }
+                else
+                {
+                    ui->record->append("任务号设置成功");
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                int rc=modbus_write_registers(ctx,MODBUS_NABO_TASKNUM,1,tab_reg);
+                if(rc!=1)
+                {
+                    ui->record->append("任务号设置失败");
+                }
+                else
+                {
+                    ui->record->append("任务号设置成功");
+                }
+            }
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
@@ -507,14 +810,93 @@ Client::Client(QWidget *parent) :
             json.insert(ASK_POS2_KEY_KAWASAKI, ASK_POS2_ONCE_KAWASAKI);
             json.insert(ASK_SIZE2_KEY_KAWASAKI, ASK_SIZE2_ONCE_KAWASAKI);
             QString msg=JsonToQstring(json);
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            int time_s=0;
+            for(unsigned int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='"')   //"
+                {
+                    if(time_s==0)
+                    {
+                        msg[n]='('; //(
+                        time_s=1;
+                    }
+                    else if(time_s==1)
+                    {
+                        msg[n]=')'; //)
+                        time_s=0;
+                    }
+                }
+            }
+        #endif
             client->write(msg.toUtf8());
             ui->record->append("发送:" + msg); // 将数据显示到记录框
+        }
+        else if(link_mod==LINK_MODBUS_TCP)
+        {
+            int real_readnum;
+            if(robot_mod==ROBOT_ZHICHANG)
+            {
+                uint16_t tab_reg[3];
+                real_readnum=modbus_read_registers(ctx,MODBUS_ADD_SEARCHSTAT,3,tab_reg);
+                if(real_readnum<0)
+                {
+                    ui->record->append("坐标位置获取失败");
+                }
+                else
+                {
+                    QString msg;
+                    if(tab_reg[0]==0)
+                    {
+                        msg="无效(";
+                    }
+                    else if(tab_reg[0]==0xff)
+                    {
+                        msg="有效(";
+                    }
+                    float y=(int16_t)tab_reg[1]/100.0;
+                    float z=(int16_t)tab_reg[2]/100.0;
+                    msg=msg+QString::number(y)+","+QString::number(z)+")";
+                    ui->strpos->setText(msg);
+
+                }
+            }
+            else if(robot_mod==ROBOT_NABOTE)
+            {
+                uint16_t tab_reg[4];
+                real_readnum=modbus_read_registers(ctx,MODBUS_NABO_SEARCHSTAT,4,tab_reg);
+                if(real_readnum<0)
+                {
+                    ui->record->append("坐标位置获取失败");
+                }
+                else
+                {
+                    QString msg;
+                    if(tab_reg[0]==0)
+                    {
+                        msg="无效(";
+                    }
+                    else if(tab_reg[0]==1)
+                    {
+                        msg="有效(";
+                    }
+                    float x=(int16_t)tab_reg[1]/100.0;
+                    float y=(int16_t)tab_reg[2]/100.0;
+                    float z=(int16_t)tab_reg[3]/100.0;
+                    msg=msg+QString::number(x)+","+QString::number(y)+","+QString::number(z)+")";
+                    ui->strpos->setText(msg);
+                }
+            }
+        }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
         }
     });
 
     //客户端接收数据
     connect(client,&QTcpSocket::readyRead,[=](){
-        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI)
+        if(link_mod==LINK_NORMAL_ASCII||link_mod==LINK_KAWASAKI||link_mod==LINK_CUSTOM)
         {
             QByteArray artemp = "接收:";
             QByteArray array = client->readAll();
@@ -626,6 +1008,15 @@ void Client::ReceiveMsg(QByteArray msg)
         }
         else if(link_mod==LINK_KAWASAKI)
         {
+        #ifdef USE_PARENTHESES_INSTEAD_QUOTATION
+            for(int n=0;n<msg.size();n++)
+            {
+                if(msg[n]=='('||msg[n]==')')   //"
+                {
+                   msg[n]='"';
+                }
+            }
+        #endif
             QJsonObject json=QstringToJson(msg);
             QJsonObject::Iterator it;
             for(it=json.begin();it!=json.end();it++)//遍历Key
@@ -823,6 +1214,10 @@ void Client::ReceiveMsg(QByteArray msg)
                 }
             }
         }
+        else if(link_mod==LINK_CUSTOM)
+        {
+
+        }
     }
 }
 
@@ -841,3 +1236,9 @@ QString Client::JsonToQstring(QJsonObject jsonObject)
 {
     return QString(QJsonDocument(jsonObject).toJson());
 }
+
+void Client::on_comboBox_currentIndexChanged(int index)
+{
+    robot_mod=index;
+}
+
