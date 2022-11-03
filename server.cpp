@@ -794,7 +794,7 @@ void modbustcpThread::run()
     {
         QString server_ip=_p->ui->ip->text();
         QString server_port=_p->ui->port->text();
-        //_p->ctx = modbus_new_tcp(server_ip.toUtf8(), server_port.toInt());
+   //   _p->ctx = modbus_new_tcp(server_ip.toUtf8(), server_port.toInt());
         _p->ctx = modbus_new_tcp(NULL, server_port.toInt());
         _p->sock = modbus_tcp_listen(_p->ctx, 1);//最大监听1路
         modbus_tcp_accept(_p->ctx, &_p->sock);

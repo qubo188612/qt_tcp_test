@@ -13,7 +13,7 @@
 #define USE_PARENTHESES_INSTEAD_QUOTATION       //json协议用括号代替引号
 #define DEL_SPACE_AND_LINEN                     //json协议去掉\n
 
-#define MODBUS_REGISTERS_MAXNUM      400//125    //寄存器最大值//MODBUS_MAX_READ_REGISTERS每次连续读取最大值
+#define MODBUS_REGISTERS_MAXNUM      0x500//125    //寄存器最大值//MODBUS_MAX_READ_REGISTERS每次连续读取最大值
 
 //智昌寄存器
 #define MODBUS_ADD_VERSION      0           //版本号
